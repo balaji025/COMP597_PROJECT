@@ -4,7 +4,7 @@ import src.trainer as trainer  # Trainer base class
 import src.trainer.stats as trainer_stats  # Trainer statistics module
 
 # === import necessary external modules ===
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -14,59 +14,68 @@ from transformers import BitsAndBytesConfig
 
 """
 This file contains the code to train an OPT model using Simple trainer (src/trainer/simple.py).
-It is based on the OPT model from HuggingFace Transformers.
-https://huggingface.co/docs/transformers/en/model_doc/opt
+It supports TWO dataset types:
+1) HuggingFace datasets.Dataset with a "text" column (uses tokenizer + HF collator)
+2) Synthetic torch-style dataset that already yields {"input_ids": ..., "labels": ...}
 """
-
 
 # -------------------------
 # Tokenizer
 # -------------------------
 def init_opt_tokenizer(model_id: str) -> transformers.PreTrainedTokenizer:
-    """
-    Initializes the OPT tokenizer from HuggingFace.
-    Args:
-        model_id (str): HF model id, e.g. "facebook/opt-13b"
-    Returns:
-        transformers.PreTrainedTokenizer: The tokenizer.
-    """
     tokenizer = transformers.AutoTokenizer.from_pretrained(model_id, use_fast=True)
-
-    # OPT may not have a pad token set; use EOS as pad
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-
     return tokenizer
 
 
 # -------------------------
-# Dataset processing
+# Helpers: detect dataset type
 # -------------------------
-def process_dataset(conf: config.Config, tokenizer: transformers.PreTrainedTokenizer, dataset: data.Dataset) -> data.Dataset:
+def _is_hf_text_dataset(ds: Any) -> bool:
+    # HF datasets.Dataset typically has .map and .column_names
+    return hasattr(ds, "map") and hasattr(ds, "column_names")
+
+
+# -------------------------
+# Dataset processing (HF text dataset only)
+# -------------------------
+def process_dataset(
+    conf: config.Config,
+    tokenizer: transformers.PreTrainedTokenizer,
+    dataset: Any,
+) -> Any:
     """
-    Tokenizes and formats the dataset for causal LM training.
-    Mirrors GPT2 example.
+    Tokenizes and formats an HF dataset that contains a "text" column.
+    If it's not an HF dataset, this function should NOT be called.
     """
+    max_len = getattr(getattr(conf, "model_configs", object()), "opt", None)
+    max_len = getattr(max_len, "max_length", 512)
+
     def tokenize(examples):
+        # Return python lists; collator will create tensors
         return tokenizer(
             examples["text"],
-            max_length=512,
+            max_length=max_len,
             padding="max_length",
             truncation=True,
-            return_tensors="pt",
         )
 
-    # Use the same config pattern as GPT2:
-    # conf.model_configs.opt.tokenize_num_process
-    dataset = dataset.map(
-        tokenize,
-        batched=True,
-        num_proc=conf.model_configs.opt.tokenize_num_process
-    )
+    num_proc = getattr(conf.model_configs.opt, "tokenize_num_process", 1)
 
-    # Remove columns that aren't needed by the model
-    # (same as your GPT2 example)
-    dataset = dataset.remove_columns(column_names=["text", "url", "timestamp"])
+    dataset = dataset.map(tokenize, batched=True, num_proc=num_proc)
+
+    # Remove columns robustly (avoid crashing if cols don't exist)
+    cols_to_remove = [c for c in ["text", "url", "timestamp"] if c in dataset.column_names]
+    if cols_to_remove:
+        dataset = dataset.remove_columns(cols_to_remove)
+
+    # Keep only model-relevant columns if present
+    keep = {"input_ids", "attention_mask"}
+    remove = [c for c in dataset.column_names if c not in keep]
+    if remove:
+        dataset = dataset.remove_columns(remove)
+
     return dataset
 
 
@@ -74,62 +83,102 @@ def process_dataset(conf: config.Config, tokenizer: transformers.PreTrainedToken
 # Optimizer
 # -------------------------
 def init_opt_optim(conf: config.Config, model: nn.Module) -> optim.Optimizer:
-    """
-    Initializes AdamW optimizer (same as GPT2 example).
-    Note: For big OPT models, you generally want a small LR.
-    """
-    return optim.AdamW(model.parameters(), lr=conf.learning_rate)
+    # Prefer conf.learning_rate, fallback to trainer_configs.simple.learning_rate, else 1e-5
+    lr = getattr(conf, "learning_rate", None)
+    if lr is None and hasattr(conf, "trainer_configs") and hasattr(conf.trainer_configs, "simple"):
+        lr = getattr(conf.trainer_configs.simple, "learning_rate", None)
+    if lr is None:
+        lr = 1e-5
+    return optim.AdamW(model.parameters(), lr=lr)
 
 
 # -------------------------
-# Pre-init: model + collator
+# Collators
 # -------------------------
-def pre_init_opt(conf: config.Config, dataset: data.Dataset) -> Tuple[transformers.PreTrainedModel, data.Dataset, transformers.PreTrainedTokenizer, transformers.DataCollatorForLanguageModeling]:
+def _synth_collate(batch):
     """
-    Prepares the OPT model, dataset, tokenizer and data collator for training.
+    For synthetic torch datasets that already return tensors:
+    expects dicts with "input_ids" and optionally "labels".
     """
-    # Choose OPT checkpoint from config if present; else default
-    model_id = getattr(conf.model_configs.opt, "hf_model_name", "facebook/opt-1.3b")
+    input_ids = torch.stack([x["input_ids"] for x in batch])
+    labels = torch.stack([x.get("labels", x["input_ids"]) for x in batch])
+    attention_mask = torch.ones_like(input_ids)
+    return {"input_ids": input_ids, "labels": labels, "attention_mask": attention_mask}
+
+
+# -------------------------
+# Pre-init: model + dataset + tokenizer + (optional) hf collator
+# -------------------------
+def pre_init_opt(
+    conf: config.Config,
+    dataset: Any,
+) -> Tuple[transformers.PreTrainedModel, Any, transformers.PreTrainedTokenizer, Optional[transformers.DataCollatorForLanguageModeling]]:
+    """
+    Prepares the OPT model, dataset, tokenizer.
+    If dataset is HF text dataset -> tokenize + return HF collator
+    If dataset is synthetic torch dataset -> skip tokenization; return None collator
+    """
+    model_id = getattr(conf.model_configs.opt, "hf_model_name", "facebook/opt-350m")
 
     tokenizer = init_opt_tokenizer(model_id)
-    dataset = process_dataset(conf, tokenizer, dataset)
 
-    # Causal LM collator (mlm=False)
-    data_collator = transformers.DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+    hf_collator: Optional[transformers.DataCollatorForLanguageModeling] = None
+    if _is_hf_text_dataset(dataset):
+        dataset = process_dataset(conf, tokenizer, dataset)
+        # This collator will create labels for causal LM (mlm=False)
+        hf_collator = transformers.DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
-    # 8-bit quantization (like your snippet)
-    bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+    # Quantization options (default: off for stability)
+    use_8bit = getattr(conf.model_configs.opt, "load_in_8bit", False)
 
-    # IMPORTANT:
-    # - use torch_dtype
-    # - use device_map="auto"
-    # - do NOT .cuda() or .to(device) later
-    model = transformers.AutoModelForCausalLM.from_pretrained(
-        model_id,
-        torch_dtype=torch.float16,
-        attn_implementation="sdpa",
-        quantization_config=bnb_config,
-        device_map="auto",
-    )
+    if use_8bit:
+        bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+        model = transformers.AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=torch.float16,
+            attn_implementation="sdpa",
+            quantization_config=bnb_config,
+            device_map="auto",
+        )
+    else:
+        # Standard (single-device) load; SimpleTrainer can safely .to(device) if it does
+        model = transformers.AutoModelForCausalLM.from_pretrained(
+            model_id,
+            attn_implementation="sdpa",
+        )
 
-    # Ensure pad token id is set
     model.config.pad_token_id = tokenizer.pad_token_id
-
-    return model, dataset, tokenizer, data_collator
+    return model, dataset, tokenizer, hf_collator
 
 
 # -------------------------
 # Trainer
 # -------------------------
-def simple_trainer(conf: config.Config, model: transformers.PreTrainedModel, dataset: data.Dataset, tokenizer: transformers.PreTrainedTokenizer, data_collator: transformers.DataCollatorForLanguageModeling) -> Tuple[trainer.Trainer, Optional[Dict]]:
+def simple_trainer(
+    conf: config.Config,
+    model: transformers.PreTrainedModel,
+    dataset: Any,
+    tokenizer: transformers.PreTrainedTokenizer,
+    hf_collator: Optional[transformers.DataCollatorForLanguageModeling],
+) -> Tuple[trainer.Trainer, Optional[Dict]]:
     """
-    Simple trainer for OPT model. Uses the SimpleTrainer from src/trainer/simple.py.
-    Mirrors GPT2 example BUT without model.cuda() (because 8-bit + device_map="auto").
-    """
-    loader = data.DataLoader(dataset, batch_size=conf.batch_size, collate_fn=data_collator)
+    Simple trainer for OPT model.
 
-    # Do NOT do: model = model.cuda()
-    # With 8-bit + device_map="auto", the model is already placed appropriately.
+    - If HF text dataset: uses HF collator (creates labels)
+    - If synth token dataset: uses _synth_collate
+    """
+    # Batch size fallback
+    batch_size = getattr(conf, "batch_size", None)
+    if batch_size is None and hasattr(conf, "trainer_configs") and hasattr(conf.trainer_configs, "simple"):
+        batch_size = getattr(conf.trainer_configs.simple, "batch_size", None)
+    if batch_size is None:
+        batch_size = 2
+
+    is_hf = _is_hf_text_dataset(dataset)
+    collate_fn = hf_collator if (is_hf and hf_collator is not None) else _synth_collate
+
+    loader = data.DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn)
+
     optimizer = init_opt_optim(conf, model)
 
     scheduler = transformers.get_scheduler(
@@ -139,8 +188,9 @@ def simple_trainer(conf: config.Config, model: transformers.PreTrainedModel, dat
         num_training_steps=len(loader),
     )
 
-    # Determine a device for the trainer:
-    # For device_map models, the "main" device is usually where the first parameter lives.
+    # Choose device
+    # If model uses device_map="auto", parameters can live on different devices;
+    # we give trainer a best-effort "main" device (often first param device).
     try:
         device = next(model.parameters()).device
     except StopIteration:
@@ -153,21 +203,16 @@ def simple_trainer(conf: config.Config, model: transformers.PreTrainedModel, dat
         lr_scheduler=scheduler,
         device=device,
         stats=trainer_stats.init_from_conf(conf),
-    ), {"model_id": getattr(conf.model_configs.opt, "hf_model_name", "facebook/opt-13b")}
+    ), {"model_id": getattr(conf.model_configs.opt, "hf_model_name", "facebook/opt-125m")}
 
 
 # -------------------------
 # Entry point
 # -------------------------
-def opt_init(conf: config.Config, dataset: data.Dataset) -> Tuple[trainer.Trainer, Optional[Dict]]:
-    """
-    Initializes the OPT model and returns the appropriate trainer based on the configuration.
-    Same structure as gpt2_init.
-    """
-    model, dataset, tokenizer, data_collator = pre_init_opt(conf, dataset)
+def opt_init(conf: config.Config, dataset: Any) -> Tuple[trainer.Trainer, Optional[Dict]]:
+    model, dataset, tokenizer, hf_collator = pre_init_opt(conf, dataset)
 
     if conf.trainer == "simple":
-        return simple_trainer(conf, model, dataset, tokenizer, data_collator)
-    else:
-        raise Exception(f"Unknown trainer type {conf.trainer}")
+        return simple_trainer(conf, model, dataset, tokenizer, hf_collator)
 
+    raise Exception(f"Unknown trainer type {conf.trainer}")
