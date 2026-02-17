@@ -5,7 +5,6 @@ import src.trainer.stats as trainer_stats  # Trainer statistics module
 
 # === import necessary external modules ===
 from typing import Dict, Optional, Tuple, Any
-import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data
