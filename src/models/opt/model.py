@@ -203,7 +203,7 @@ def simple_trainer(
         lr_scheduler=scheduler,
         device=device,
         stats=trainer_stats.init_from_conf(conf),
-    ), {"model_id": getattr(conf.model_configs.opt, "hf_model_name", "facebook/opt-125m")}
+    ), {"model_id": getattr(conf.model_configs.opt, "hf_model_name", "facebook/opt-350m")}
 
 
 # -------------------------
