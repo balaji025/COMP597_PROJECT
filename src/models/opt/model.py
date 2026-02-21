@@ -10,6 +10,7 @@ import torch.optim as optim
 import torch.utils.data as data
 import transformers
 from transformers import BitsAndBytesConfig
+import torch
 
 """
 This file contains the code to train an OPT model using Simple trainer (src/trainer/simple.py).
