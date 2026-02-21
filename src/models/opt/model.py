@@ -199,6 +199,9 @@ def simple_trainer(
     # Move model to that device (only safe when not using device_map="auto")
     model = model.to(device)
 
+    print("torch.cuda.is_available =", torch.cuda.is_available())
+    print("OPT model param device =", next(model.parameters()).device)
+
     return trainer.SimpleTrainer(
         loader=loader,
         model=model,
