@@ -193,10 +193,11 @@ def simple_trainer(
     # Choose device
     # If model uses device_map="auto", parameters can live on different devices;
     # we give trainer a best-effort "main" device (often first param device).
-    try:
-        device = next(model.parameters()).device
-    except StopIteration:
-        device = torch.device("cpu")
+    # Force cuda when available (SLURM gave you a GPU, so it should be)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Move model to that device (only safe when not using device_map="auto")
+    model = model.to(device)
 
     return trainer.SimpleTrainer(
         loader=loader,
