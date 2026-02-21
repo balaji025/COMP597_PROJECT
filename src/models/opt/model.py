@@ -146,6 +146,8 @@ def pre_init_opt(
             model_id,
             attn_implementation="sdpa",
         )
+        if torch.cuda.is_available():
+            model = model.to("cuda")
 
     model.config.pad_token_id = tokenizer.pad_token_id
     return model, dataset, tokenizer, hf_collator
