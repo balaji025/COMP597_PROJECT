@@ -1,1 +1,1 @@
-from .opt_config import OptConfig
+from .opt_config import ModelConfig
