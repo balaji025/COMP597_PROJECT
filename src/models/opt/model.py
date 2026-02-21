@@ -202,13 +202,22 @@ def simple_trainer(
     print("torch.cuda.is_available =", torch.cuda.is_available())
     print("OPT model param device =", next(model.parameters()).device)
 
+
+    stats = trainer_stats.init_from_conf(conf)
+
+    # Force stats to use the same device as training
+    if hasattr(stats, "device"):
+        stats.device = device
+    elif hasattr(stats, "_device"):
+        stats._device = device
+
     return trainer.SimpleTrainer(
         loader=loader,
         model=model,
         optimizer=optimizer,
         lr_scheduler=scheduler,
         device=device,
-        stats=trainer_stats.init_from_conf(conf),
+        stats=stats,
     ), {"model_id": getattr(conf.model_configs.opt, "hf_model_name", "facebook/opt-350m")}
 
 
