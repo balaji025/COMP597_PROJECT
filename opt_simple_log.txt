@@ -1,0 +1,400 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                      SLURM Configuration                                     │
+├─────────────────────────────┬────────────────────────────────────────────────────────────────┤
+│ Variable                    │ Value                                                          │
+├─────────────────────────────┼────────────────────────────────────────────────────────────────┤
+│ COMP597_SLURM_ACCOUNT       │ energy-efficiency-comp597                                      │
+│ COMP597_SLURM_CONFIG        │ /home/2026/brames2/COMP597-starter-code/config/slurm_config.sh │
+│ COMP597_SLURM_CONFIG_LOG    │ true                                                           │
+│ COMP597_SLURM_CPUS_PER_TASK │ 4                                                              │
+│ COMP597_SLURM_JOB_SCRIPT    │ /home/2026/brames2/COMP597-starter-code/scripts/job.sh         │
+│ COMP597_SLURM_MIN_MEM       │ 4GB                                                            │
+│ COMP597_SLURM_NODELIST      │ gpu-teach-03                                                   │
+│ COMP597_SLURM_NTASKS        │ 1                                                              │
+│ COMP597_SLURM_NUM_GPUS      │ 1                                                              │
+│ COMP597_SLURM_PARTITION     │ all                                                            │
+│ COMP597_SLURM_QOS           │ comp597                                                        │
+│ COMP597_SLURM_TIME_LIMIT    │ 5:00                                                           │
+└─────────────────────────────┴────────────────────────────────────────────────────────────────┘
+
+
+┌────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                SLURM Hardware Configuration                                │
+├────────────────────────┬───────────────────────────────────────────────────────────────────┤
+│ Variable               │ Value                                                             │
+├────────────────────────┼───────────────────────────────────────────────────────────────────┤
+│ SLURM_CPUS_ON_NODE     │ 4                                                                 │
+│ SLURM_CPUS_PER_TASK    │ 4                                                                 │
+│ SLURM_CPU_BIND         │ quiet,mask_cpu:0x000000000000000400000001000000000000000400000001 │
+│ SLURM_CPU_BIND_LIST    │ 0x000000000000000400000001000000000000000400000001                │
+│ SLURM_CPU_BIND_TYPE    │ mask_cpu:                                                         │
+│ SLURM_CPU_BIND_VERBOSE │ quiet                                                             │
+│ SLURM_GPUS             │ 1                                                                 │
+│ SLURM_GPUS_ON_NODE     │ 1                                                                 │
+│ SLURM_MEM_PER_NODE     │ 4096                                                              │
+└────────────────────────┴───────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────┐
+│                    SLURM Job Info                   │
+├─────────────────────────┬───────────────────────────┤
+│ Variable                │ Value                     │
+├─────────────────────────┼───────────────────────────┤
+│ SLURM_JOBID             │ 14776                     │
+│ SLURM_JOB_ACCOUNT       │ energy-efficiency-comp597 │
+│ SLURM_JOB_CPUS_PER_NODE │ 4                         │
+│ SLURM_JOB_END_TIME      │ 1771785005                │
+│ SLURM_JOB_GID           │ 65534                     │
+│ SLURM_JOB_GROUP         │ nogroup                   │
+│ SLURM_JOB_ID            │ 14776                     │
+│ SLURM_JOB_NAME          │ job.sh                    │
+│ SLURM_JOB_NODELIST      │ gpu-teach-03              │
+│ SLURM_JOB_NUM_NODES     │ 1                         │
+│ SLURM_JOB_PARTITION     │ all                       │
+│ SLURM_JOB_QOS           │ comp597                   │
+│ SLURM_JOB_START_TIME    │ 1771784705                │
+│ SLURM_JOB_UID           │ 2529345                   │
+│ SLURM_JOB_USER          │ brames2                   │
+└─────────────────────────┴───────────────────────────┘
+
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                         SLURM Job Configuration                                        │
+├─────────────────────────────────────────┬──────────────────────────────────────────────────────────────┤
+│ Variable                                │ Value                                                        │
+├─────────────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ COMP597_JOB_CACHE_DIR                   │ /mnt/teaching/slurm/brames2/.cache                           │
+│ COMP597_JOB_COMMAND                     │ /home/2026/brames2/COMP597-starter-code/scripts/launch.sh    │
+│ COMP597_JOB_CONDA_DIR                   │ /home/slurm/comp597/conda                                    │
+│ COMP597_JOB_CONDA_ENV_DIR               │ /home/slurm/comp597/conda/envs                               │
+│ COMP597_JOB_CONDA_ENV_NAME              │ comp597                                                      │
+│ COMP597_JOB_CONDA_ENV_PREFIX            │ /home/slurm/comp597/conda/envs/comp597                       │
+│ COMP597_JOB_CONFIG                      │ /home/2026/brames2/COMP597-starter-code/config/job_config.sh │
+│ COMP597_JOB_CONFIG_LOG                  │ true                                                         │
+│ COMP597_JOB_SCRATCH_STORAGE             │ /mnt/teaching/slurm                                          │
+│ COMP597_JOB_STORAGE_PARTITION           │ /home/slurm/comp597                                          │
+│ COMP597_JOB_STUDENTS_BASE_DIR           │ /home/slurm/comp597/students                                 │
+│ COMP597_JOB_STUDENT_SCRATCH_STORAGE_DIR │ /mnt/teaching/slurm/brames2                                  │
+│ COMP597_JOB_STUDENT_STORAGE_DIR         │ /home/slurm/comp597/students/brames2                         │
+│ COMP597_JOB_WORKING_DIRECTORY           │                                                              │
+└─────────────────────────────────────────┴──────────────────────────────────────────────────────────────┘
+
+
+┌────────────────────────────────────────────────────────────────┐
+│                   Conda Environment Variables                  │
+├───────────────────────┬────────────────────────────────────────┤
+│ Variable              │ Value                                  │
+├───────────────────────┼────────────────────────────────────────┤
+│ CONDA_DEFAULT_ENV     │ comp597                                │
+│ CONDA_EXE             │ /usr/local/pkgs/anaconda/bin/conda     │
+│ CONDA_PREFIX          │ /home/slurm/comp597/conda/envs/comp597 │
+│ CONDA_PREFIX_1        │ /usr/local/pkgs/anaconda               │
+│ CONDA_PROMPT_MODIFIER │ (comp597)                              │
+│ CONDA_PYTHON_EXE      │ /usr/local/pkgs/anaconda/bin/python    │
+│ CONDA_SHLVL           │ 2                                      │
+└───────────────────────┴────────────────────────────────────────┘
+
+
+torch.cuda.is_available = True
+OPT model param device = cuda:0
+step 316.174521 -- forward 118.521084 -- backward 128.523024 -- optimizer step 68.986931
+step 237.616729 -- forward 65.318893 -- backward 115.265383 -- optimizer step 56.345471
+step 238.865399 -- forward 65.222471 -- backward 116.066946 -- optimizer step 57.004252
+step 237.880852 -- forward 64.041392 -- backward 116.671976 -- optimizer step 56.524263
+step 233.350421 -- forward 62.966755 -- backward 113.373754 -- optimizer step 56.404202
+step 237.650329 -- forward 65.09783 -- backward 115.299444 -- optimizer step 56.543913
+step 239.466897 -- forward 65.72747 -- backward 116.678075 -- optimizer step 56.435262
+step 237.695599 -- forward 65.357044 -- backward 115.416826 -- optimizer step 56.28782
+step 238.156027 -- forward 63.81335 -- backward 117.176804 -- optimizer step 56.574084
+step 240.389912 -- forward 67.128651 -- backward 115.69598 -- optimizer step 56.945281
+step 237.971804 -- forward 62.748333 -- backward 118.18739 -- optimizer step 56.425653
+step 238.34328 -- forward 64.925558 -- backward 115.558588 -- optimizer step 57.027892
+step 238.398921 -- forward 66.070695 -- backward 115.332025 -- optimizer step 56.337831
+step 239.026261 -- forward 64.741954 -- backward 117.02912 -- optimizer step 56.631276
+step 238.215338 -- forward 65.537907 -- backward 115.590458 -- optimizer step 56.479173
+step 236.928627 -- forward 63.420513 -- backward 115.970324 -- optimizer step 56.93133
+step 239.272604 -- forward 66.36627 -- backward 115.583557 -- optimizer step 56.657597
+step 238.056436 -- forward 65.445055 -- backward 115.408756 -- optimizer step 56.559155
+step 238.9704 -- forward 65.10866 -- backward 116.683585 -- optimizer step 56.554085
+step 238.274328 -- forward 65.212902 -- backward 115.478146 -- optimizer step 56.963891
+step 237.673439 -- forward 63.85489 -- backward 116.815408 -- optimizer step 56.392622
+step 233.776708 -- forward 63.120319 -- backward 112.833165 -- optimizer step 56.90072
+step 238.442152 -- forward 65.229901 -- backward 115.580608 -- optimizer step 57.003061
+step 239.214414 -- forward 65.704449 -- backward 116.518283 -- optimizer step 56.370222
+step 238.067086 -- forward 65.325723 -- backward 115.734481 -- optimizer step 56.383652
+step 238.753346 -- forward 63.974742 -- backward 117.290145 -- optimizer step 56.854729
+step 240.469683 -- forward 67.083381 -- backward 115.855652 -- optimizer step 56.91722
+step 238.128046 -- forward 65.552057 -- backward 115.466296 -- optimizer step 56.489423
+step 237.606448 -- forward 64.908256 -- backward 115.623669 -- optimizer step 56.473192
+step 238.35879 -- forward 65.839292 -- backward 115.553758 -- optimizer step 56.341891
+step 238.682256 -- forward 64.977808 -- backward 116.544733 -- optimizer step 56.538264
+step 238.692665 -- forward 65.838542 -- backward 115.562168 -- optimizer step 56.667857
+step 236.636803 -- forward 63.479034 -- backward 115.638148 -- optimizer step 56.8924
+step 239.572279 -- forward 66.610024 -- backward 115.75059 -- optimizer step 56.586605
+step 238.306809 -- forward 65.382484 -- backward 115.76573 -- optimizer step 56.552665
+step 239.136213 -- forward 65.393245 -- backward 116.651004 -- optimizer step 56.479544
+step 238.062215 -- forward 65.312223 -- backward 115.635419 -- optimizer step 56.500444
+step 238.482703 -- forward 64.025753 -- backward 117.196264 -- optimizer step 56.581986
+step 233.560954 -- forward 63.341722 -- backward 113.006847 -- optimizer step 56.566785
+step 237.900863 -- forward 65.250073 -- backward 115.563338 -- optimizer step 56.475704
+step 239.784842 -- forward 66.168077 -- backward 116.453012 -- optimizer step 56.556274
+step 238.047305 -- forward 65.489276 -- backward 115.640439 -- optimizer step 56.308971
+step 238.32914 -- forward 64.076853 -- backward 117.216025 -- optimizer step 56.415232
+step 240.343101 -- forward 67.088711 -- backward 115.984295 -- optimizer step 56.637686
+step 238.225118 -- forward 62.870835 -- backward 118.2249 -- optimizer step 56.509024
+step 237.971223 -- forward 65.010798 -- backward 115.433256 -- optimizer step 56.90371
+step 238.781286 -- forward 66.181627 -- backward 115.66754 -- optimizer step 56.326151
+step 238.556353 -- forward 64.937227 -- backward 116.620105 -- optimizer step 56.37489
+step 238.908389 -- forward 65.698169 -- backward 115.857042 -- optimizer step 56.742057
+step 237.225682 -- forward 63.589836 -- backward 116.156697 -- optimizer step 56.864299
+step 239.500598 -- forward 66.545053 -- backward 115.764642 -- optimizer step 56.555894
+step 238.703196 -- forward 65.616988 -- backward 116.079616 -- optimizer step 56.381292
+step 239.394636 -- forward 65.856042 -- backward 116.665005 -- optimizer step 56.2588
+step 238.802907 -- forward 65.70615 -- backward 115.839102 -- optimizer step 56.607476
+step 238.859948 -- forward 64.653223 -- backward 117.089242 -- optimizer step 56.494924
+step 234.763673 -- forward 63.060778 -- backward 114.647674 -- optimizer step 56.438163
+step 237.765321 -- forward 65.199362 -- backward 115.564368 -- optimizer step 56.380082
+step 240.84121 -- forward 66.577703 -- backward 116.754016 -- optimizer step 56.875549
+step 238.011115 -- forward 65.137291 -- backward 115.887483 -- optimizer step 56.369601
+step 239.172303 -- forward 64.821136 -- backward 117.170813 -- optimizer step 56.502904
+step 237.795901 -- forward 64.770234 -- backward 115.71905 -- optimizer step 56.672916
+step 238.37316 -- forward 63.464314 -- backward 117.500108 -- optimizer step 56.805128
+step 235.607066 -- forward 64.419999 -- backward 113.933201 -- optimizer step 56.642586
+step 238.98864 -- forward 66.256297 -- backward 115.598839 -- optimizer step 56.503724
+step 239.876255 -- forward 65.483936 -- backward 117.103072 -- optimizer step 56.663016
+step 239.379026 -- forward 66.498691 -- backward 115.850663 -- optimizer step 56.411172
+step 239.381806 -- forward 64.569031 -- backward 117.391477 -- optimizer step 56.711318
+step 240.220299 -- forward 67.265244 -- backward 115.983485 -- optimizer step 56.337781
+step 238.676205 -- forward 66.073595 -- backward 115.412996 -- optimizer step 56.578235
+step 237.815161 -- forward 65.069829 -- backward 115.805322 -- optimizer step 56.3185
+step 239.201644 -- forward 66.304909 -- backward 115.742511 -- optimizer step 56.523144
+step 240.205949 -- forward 65.599528 -- backward 117.309116 -- optimizer step 56.671086
+step 239.64661 -- forward 66.435511 -- backward 115.72498 -- optimizer step 56.533284
+step 236.906407 -- forward 63.954662 -- backward 115.955324 -- optimizer step 56.366811
+step 240.83064 -- forward 67.162622 -- backward 116.210638 -- optimizer step 56.84927
+step 238.823207 -- forward 65.973933 -- backward 115.755871 -- optimizer step 56.482524
+step 240.589836 -- forward 66.252869 -- backward 117.125133 -- optimizer step 56.580326
+step 239.531028 -- forward 66.262818 -- backward 115.843972 -- optimizer step 56.780489
+step 239.879894 -- forward 65.602298 -- backward 117.284995 -- optimizer step 56.377822
+step 239.996036 -- forward 66.588463 -- backward 115.991344 -- optimizer step 56.449433
+step 239.180653 -- forward 64.193526 -- backward 117.703632 -- optimizer step 56.654426
+step 240.568075 -- forward 67.399696 -- backward 115.940504 -- optimizer step 56.614676
+step 238.622784 -- forward 65.846261 -- backward 115.62392 -- optimizer step 56.475324
+step 237.907593 -- forward 65.096219 -- backward 115.557158 -- optimizer step 56.637166
+step 239.729492 -- forward 66.487332 -- backward 115.814613 -- optimizer step 56.787539
+step 240.338681 -- forward 65.658058 -- backward 117.178323 -- optimizer step 56.870029
+step 239.699372 -- forward 66.525681 -- backward 116.043566 -- optimizer step 56.507684
+step 238.560083 -- forward 64.112124 -- backward 117.409497 -- optimizer step 56.411373
+step 242.12577 -- forward 67.765052 -- backward 116.855949 -- optimizer step 56.892389
+step 238.37232 -- forward 63.287081 -- backward 117.859314 -- optimizer step 56.611665
+step 236.960777 -- forward 64.896516 -- backward 114.795956 -- optimizer step 56.648535
+step 239.437817 -- forward 66.34943 -- backward 115.820912 -- optimizer step 56.641626
+step 239.320875 -- forward 65.376214 -- backward 116.816577 -- optimizer step 56.24493
+step 239.907785 -- forward 66.550343 -- backward 116.135087 -- optimizer step 56.580455
+step 239.135722 -- forward 64.067793 -- backward 117.794573 -- optimizer step 56.649256
+step 240.824229 -- forward 67.433097 -- backward 116.171718 -- optimizer step 56.610816
+step 239.413367 -- forward 66.179346 -- backward 115.597878 -- optimizer step 57.028932
+step 238.037656 -- forward 65.186171 -- backward 115.787182 -- optimizer step 56.446693
+step 239.837493 -- forward 66.491281 -- backward 116.253918 -- optimizer step 56.465163
+step 239.683391 -- forward 65.72612 -- backward 116.93454 -- optimizer step 56.397652
+step 239.994595 -- forward 66.573063 -- backward 116.178087 -- optimizer step 56.575305
+step 238.993101 -- forward 64.349948 -- backward 117.58141 -- optimizer step 56.425012
+step 240.982252 -- forward 67.526307 -- backward 116.277929 -- optimizer step 56.563434
+step 238.919449 -- forward 63.110378 -- backward 118.315602 -- optimizer step 56.88639
+step 238.226108 -- forward 65.019708 -- backward 115.888453 -- optimizer step 56.703097
+step 239.875674 -- forward 66.606753 -- backward 116.203218 -- optimizer step 56.441523
+step 240.510144 -- forward 65.932462 -- backward 117.243214 -- optimizer step 56.704647
+step 239.615169 -- forward 66.064575 -- backward 116.29766 -- optimizer step 56.573594
+step 239.829143 -- forward 64.598562 -- backward 118.074567 -- optimizer step 56.22918
+step 239.259295 -- forward 66.264198 -- backward 115.827713 -- optimizer step 56.555794
+step 238.848298 -- forward 63.381853 -- backward 118.1901 -- optimizer step 56.655356
+step 237.212112 -- forward 65.12811 -- backward 115.025649 -- optimizer step 56.443753
+step 239.927095 -- forward 66.588094 -- backward 115.942864 -- optimizer step 56.774018
+step 240.253179 -- forward 65.821281 -- backward 117.306485 -- optimizer step 56.489003
+step 239.58421 -- forward 66.233208 -- backward 115.947294 -- optimizer step 56.706197
+step 239.65202 -- forward 64.335787 -- backward 117.767612 -- optimizer step 56.93211
+step 240.186669 -- forward 66.685106 -- backward 116.293799 -- optimizer step 56.595905
+step 239.248903 -- forward 65.843831 -- backward 116.109316 -- optimizer step 56.678216
+step 237.191362 -- forward 65.006768 -- backward 114.938247 -- optimizer step 56.635736
+step 239.775023 -- forward 66.573333 -- backward 116.274119 -- optimizer step 56.314001
+step 240.293821 -- forward 65.849341 -- backward 117.431837 -- optimizer step 56.390242
+step 239.475717 -- forward 66.316948 -- backward 116.082996 -- optimizer step 56.447693
+step 239.62162 -- forward 64.290077 -- backward 117.766693 -- optimizer step 56.947231
+step 240.962341 -- forward 67.328784 -- backward 116.299009 -- optimizer step 56.542624
+step 238.536373 -- forward 63.445653 -- backward 117.910045 -- optimizer step 56.542444
+step 236.967818 -- forward 64.987868 -- backward 114.881048 -- optimizer step 56.482484
+step 240.005666 -- forward 66.513572 -- backward 116.237268 -- optimizer step 56.634286
+step 240.82399 -- forward 65.941293 -- backward 117.434238 -- optimizer step 56.817698
+step 239.436197 -- forward 66.132926 -- backward 116.178208 -- optimizer step 56.409061
+step 239.697212 -- forward 64.713003 -- backward 117.958066 -- optimizer step 56.404292
+step 239.909684 -- forward 66.734686 -- backward 116.273899 -- optimizer step 56.28674
+step 239.357326 -- forward 66.023565 -- backward 116.163647 -- optimizer step 56.555575
+step 237.12904 -- forward 64.790085 -- backward 114.813186 -- optimizer step 56.90949
+step 240.451893 -- forward 66.701915 -- backward 116.36835 -- optimizer step 56.758678
+step 240.776368 -- forward 66.143226 -- backward 117.389046 -- optimizer step 56.615785
+step 239.57586 -- forward 65.73108 -- backward 116.233999 -- optimizer step 56.977742
+step 240.228709 -- forward 64.824366 -- backward 117.952495 -- optimizer step 56.831099
+step 239.410137 -- forward 65.915143 -- backward 116.110466 -- optimizer step 56.651626
+step 237.155471 -- forward 63.702338 -- backward 116.35708 -- optimizer step 56.490413
+step 238.254299 -- forward 65.15005 -- backward 115.74497 -- optimizer step 56.750367
+step 240.183799 -- forward 66.601713 -- backward 116.251068 -- optimizer step 56.388082
+step 240.85527 -- forward 66.168597 -- backward 117.59094 -- optimizer step 56.474883
+step 239.60831 -- forward 66.131465 -- backward 116.208628 -- optimizer step 56.641966
+step 239.978436 -- forward 64.770454 -- backward 118.126978 -- optimizer step 56.461493
+step 241.321907 -- forward 67.245004 -- backward 116.872019 -- optimizer step 56.580925
+step 237.581197 -- forward 64.169435 -- backward 116.432441 -- optimizer step 56.366731
+step 237.086051 -- forward 64.990888 -- backward 114.562132 -- optimizer step 56.922169
+step 240.120588 -- forward 66.466342 -- backward 116.427842 -- optimizer step 56.609186
+step 241.022373 -- forward 66.509212 -- backward 117.515339 -- optimizer step 56.070937
+step 239.331815 -- forward 65.900543 -- backward 116.262459 -- optimizer step 56.530004
+step 240.571015 -- forward 64.954177 -- backward 117.884275 -- optimizer step 57.107714
+step 241.774094 -- forward 66.834727 -- backward 117.384627 -- optimizer step 56.925121
+step 237.228763 -- forward 64.055893 -- backward 116.127926 -- optimizer step 56.417342
+step 236.521741 -- forward 64.561631 -- backward 114.395319 -- optimizer step 56.950571
+step 239.816733 -- forward 66.134995 -- backward 116.37183 -- optimizer step 56.699357
+step 241.106933 -- forward 66.293039 -- backward 117.506808 -- optimizer step 56.682297
+step 239.914305 -- forward 66.166507 -- backward 116.428712 -- optimizer step 56.576715
+step 240.591096 -- forward 65.1216 -- backward 117.895945 -- optimizer step 56.947141
+step 238.909409 -- forward 65.491596 -- backward 116.361921 -- optimizer step 56.404573
+step 238.021614 -- forward 63.892051 -- backward 116.517073 -- optimizer step 56.984911
+step 236.339948 -- forward 64.726424 -- backward 114.562012 -- optimizer step 56.447573
+step 240.406635 -- forward 66.792257 -- backward 116.445743 -- optimizer step 56.550545
+step 240.989115 -- forward 66.366971 -- backward 117.55194 -- optimizer step 56.449223
+step 239.812036 -- forward 65.929914 -- backward 116.358312 -- optimizer step 56.90025
+step 240.499308 -- forward 65.070691 -- backward 118.11269 -- optimizer step 56.690857
+step 241.587205 -- forward 67.00309 -- backward 117.385348 -- optimizer step 56.570845
+step 238.053628 -- forward 64.249807 -- backward 116.18534 -- optimizer step 57.003732
+step 236.082587 -- forward 64.381549 -- backward 114.114576 -- optimizer step 56.923661
+step 240.118902 -- forward 66.420822 -- backward 116.429263 -- optimizer step 56.651867
+step 241.442002 -- forward 66.684956 -- backward 117.745425 -- optimizer step 56.392483
+step 239.908228 -- forward 66.043215 -- backward 116.812959 -- optimizer step 56.430443
+step 240.207553 -- forward 65.278363 -- backward 117.923437 -- optimizer step 56.362623
+step 241.505404 -- forward 66.891489 -- backward 117.575371 -- optimizer step 56.114678
+step 240.753551 -- forward 64.514691 -- backward 118.685089 -- optimizer step 56.935221
+step 235.894825 -- forward 63.691518 -- backward 114.650125 -- optimizer step 56.932342
+step 239.840077 -- forward 65.961684 -- backward 116.701547 -- optimizer step 56.568005
+step 242.134003 -- forward 67.287075 -- backward 117.598591 -- optimizer step 56.588687
+step 239.686514 -- forward 65.72791 -- backward 116.7968 -- optimizer step 56.537655
+step 240.423965 -- forward 65.609479 -- backward 117.613142 -- optimizer step 56.575376
+step 239.781546 -- forward 65.983635 -- backward 116.759588 -- optimizer step 56.409983
+step 240.641009 -- forward 65.048919 -- backward 118.383054 -- optimizer step 56.587516
+step 236.399003 -- forward 63.697729 -- backward 115.229235 -- optimizer step 56.835829
+step 239.814667 -- forward 65.705191 -- backward 116.87107 -- optimizer step 56.631947
+step 241.828258 -- forward 67.383366 -- backward 117.289196 -- optimizer step 56.546115
+step 240.457297 -- forward 66.154156 -- backward 117.018773 -- optimizer step 56.663357
+step 242.045461 -- forward 66.590854 -- backward 117.698183 -- optimizer step 57.075764
+step 240.737552 -- forward 66.858429 -- backward 116.795409 -- optimizer step 56.454653
+step 241.193499 -- forward 65.68956 -- backward 118.043099 -- optimizer step 56.811009
+step 240.992154 -- forward 67.070171 -- backward 116.793389 -- optimizer step 56.510664
+step 240.01272 -- forward 64.565572 -- backward 118.387084 -- optimizer step 56.441704
+step 241.780617 -- forward 67.695711 -- backward 117.102944 -- optimizer step 56.366033
+step 237.53682 -- forward 63.749049 -- backward 116.605266 -- optimizer step 56.578926
+step 237.996298 -- forward 65.146662 -- backward 115.713123 -- optimizer step 56.518394
+step 240.885764 -- forward 66.95461 -- backward 116.976952 -- optimizer step 56.321771
+step 241.694597 -- forward 66.514654 -- backward 118.208922 -- optimizer step 56.347422
+step 239.838377 -- forward 66.057885 -- backward 116.467863 -- optimizer step 56.684337
+step 240.444377 -- forward 65.316064 -- backward 118.14791 -- optimizer step 56.359432
+step 240.453357 -- forward 66.091546 -- backward 117.027663 -- optimizer step 56.408584
+step 238.859812 -- forward 64.4659 -- backward 116.992882 -- optimizer step 56.768499
+step 235.921154 -- forward 64.382059 -- backward 114.165518 -- optimizer step 56.761588
+step 240.03314 -- forward 66.28656 -- backward 116.597186 -- optimizer step 56.2267
+step 242.105643 -- forward 66.829167 -- backward 118.391144 -- optimizer step 56.259691
+step 240.427695 -- forward 66.090536 -- backward 117.259407 -- optimizer step 56.448993
+step 241.411231 -- forward 65.620769 -- backward 118.1583 -- optimizer step 57.008643
+step 240.412166 -- forward 65.931035 -- backward 117.300407 -- optimizer step 56.571366
+step 240.433177 -- forward 64.619263 -- backward 118.543827 -- optimizer step 56.548205
+step 235.177362 -- forward 63.705358 -- backward 114.536644 -- optimizer step 56.334431
+step 240.277864 -- forward 66.128207 -- backward 117.049963 -- optimizer step 56.480615
+step 242.792614 -- forward 67.577539 -- backward 117.572981 -- optimizer step 56.985692
+step 240.997845 -- forward 66.157637 -- backward 117.496101 -- optimizer step 56.691268
+step 241.689986 -- forward 66.507142 -- backward 117.838426 -- optimizer step 56.727118
+step 240.626839 -- forward 66.555033 -- backward 116.485134 -- optimizer step 56.963172
+step 241.142298 -- forward 65.509528 -- backward 118.481756 -- optimizer step 56.507324
+step 240.748891 -- forward 66.834728 -- backward 116.613416 -- optimizer step 56.690177
+step 240.707891 -- forward 64.726455 -- backward 118.889872 -- optimizer step 56.482884
+step 242.401587 -- forward 67.938045 -- backward 117.48061 -- optimizer step 56.363912
+step 239.158436 -- forward 63.79446 -- backward 118.413464 -- optimizer step 56.331852
+step 237.112883 -- forward 64.974888 -- backward 114.99318 -- optimizer step 56.514935
+step 240.564638 -- forward 66.707306 -- backward 116.751198 -- optimizer step 56.484965
+step 241.873949 -- forward 66.813208 -- backward 117.836676 -- optimizer step 56.606356
+step 240.750852 -- forward 66.251439 -- backward 117.059363 -- optimizer step 56.798908
+step 240.571978 -- forward 65.548498 -- backward 117.990278 -- optimizer step 56.427353
+step 240.384105 -- forward 66.069646 -- backward 117.271166 -- optimizer step 56.443433
+step 239.387779 -- forward 64.663864 -- backward 117.638612 -- optimizer step 56.463924
+step 235.600829 -- forward 64.061664 -- backward 114.588534 -- optimizer step 56.325981
+step 240.295723 -- forward 66.277179 -- backward 116.89586 -- optimizer step 56.498364
+step 242.712453 -- forward 67.011551 -- backward 118.14787 -- optimizer step 56.924491
+step 240.745532 -- forward 66.056306 -- backward 117.199745 -- optimizer step 56.86647
+step 241.545124 -- forward 66.178837 -- backward 117.997748 -- optimizer step 56.753659
+step 240.64516 -- forward 66.2985 -- backward 117.403799 -- optimizer step 56.329712
+step 241.343051 -- forward 65.360704 -- backward 118.82209 -- optimizer step 56.553206
+step 235.965955 -- forward 63.658008 -- backward 114.828247 -- optimizer step 56.83892
+step 240.808212 -- forward 66.210868 -- backward 117.292626 -- optimizer step 56.324942
+step 242.020552 -- forward 67.570809 -- backward 116.87701 -- optimizer step 56.940362
+step 240.67763 -- forward 66.708586 -- backward 117.015993 -- optimizer step 56.333422
+step 242.088012 -- forward 66.812708 -- backward 118.217751 -- optimizer step 56.435033
+step 241.150688 -- forward 67.108752 -- backward 116.936871 -- optimizer step 56.484234
+step 242.183564 -- forward 66.645155 -- backward 118.333794 -- optimizer step 56.594956
+step 240.941454 -- forward 66.270599 -- backward 117.246016 -- optimizer step 56.81603
+step 241.171238 -- forward 65.527247 -- backward 118.607557 -- optimizer step 56.415793
+step 240.758071 -- forward 66.303689 -- backward 117.193996 -- optimizer step 56.626176
+step 241.223899 -- forward 64.902877 -- backward 119.155606 -- optimizer step 56.543986
+step 235.981296 -- forward 63.828041 -- backward 114.878489 -- optimizer step 56.652087
+step 240.512447 -- forward 66.117876 -- backward 117.385509 -- optimizer step 56.377822
+step 243.929892 -- forward 68.030377 -- backward 118.346804 -- optimizer step 56.940561
+step 240.856203 -- forward 66.456952 -- backward 117.328417 -- optimizer step 56.461274
+step 242.148844 -- forward 66.849549 -- backward 118.156101 -- optimizer step 56.538176
+step 240.957904 -- forward 66.93483 -- backward 117.003562 -- optimizer step 56.389183
+step 242.279016 -- forward 66.134717 -- backward 118.650339 -- optimizer step 56.87307
+step 241.117757 -- forward 66.515013 -- backward 117.030592 -- optimizer step 56.946572
+step 241.2841 -- forward 65.353754 -- backward 118.78219 -- optimizer step 56.531425
+step 240.821792 -- forward 66.27173 -- backward 117.595452 -- optimizer step 56.333562
+step 240.009139 -- forward 64.545022 -- backward 117.898817 -- optimizer step 56.957431
+step 236.86679 -- forward 64.409539 -- backward 115.257654 -- optimizer step 56.587366
+step 241.390371 -- forward 66.261759 -- backward 117.472079 -- optimizer step 57.005142
+step 243.924862 -- forward 67.670471 -- backward 118.667479 -- optimizer step 56.951721
+AVG : step 239.7634829453125 -- forward 65.809276109375 -- backward 116.67113578125 -- optimizer step 56.64382351171875
+###############        Step        ###############
+mean   :  239.7635
+q0.001 :  233.3504
+q0.01  :  234.7637
+q0.1   :  237.2121
+q0.25  :  238.3723
+q0.5   :  239.6994
+q0.75  :  240.6410
+q0.9   :  241.4112
+q0.99  :  242.7926
+q0.999 :  316.1745
+###############      FORWARD       ###############
+mean   :  65.8093
+q0.001 :  62.7483
+q0.01  :  63.0608
+q0.1   :  63.9747
+q0.25  :  64.9029
+q0.5   :  65.8213
+q0.75  :  66.4570
+q0.9   :  66.9348
+q0.99  :  67.7651
+q0.999 :  118.5211
+###############      BACKWARD      ###############
+mean   :  116.6711
+q0.001 :  112.8332
+q0.01  :  113.9332
+q0.1   :  115.4088
+q0.25  :  115.8277
+q0.5   :  116.6510
+q0.75  :  117.4342
+q0.9   :  118.1479
+q0.99  :  118.8221
+q0.999 :  128.5230
+###############   OPTIMIZER STEP   ###############
+mean   :  56.6438
+q0.001 :  56.0709
+q0.01  :  56.2292
+q0.1   :  56.3594
+q0.25  :  56.4415
+q0.5   :  56.5634
+q0.75  :  56.7271
+q0.9   :  56.9323
+q0.99  :  57.0289
+q0.999 :  68.9869
