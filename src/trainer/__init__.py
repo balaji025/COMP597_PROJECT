@@ -14,4 +14,5 @@ Notes
 """
 from src.trainer.base import Trainer
 from src.trainer.simple import SimpleTrainer
+from src.trainer.final_experiment import FinalExperimentTrainer
 
