@@ -22,11 +22,12 @@ trainer_stats_name = "final_experiment"
 def construct_trainer_stats(conf: config.Config, **kwargs) -> base.TrainerStats:
     device = kwargs.get("device", torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
-    # Safe defaults if your Config does not yet expose these fields
-    output_dir = getattr(conf, "output_dir", "outputs/final_experiment")
-    experiment_mode = getattr(conf, "experiment_mode", "fine_grained")
-    sample_interval_sec = float(getattr(conf, "sample_interval_sec", 0.5))
-    run_name = getattr(conf, "run_name", "run_0")
+    stats_conf = getattr(getattr(conf, "trainer_stats_configs", object()), "final_experiment", object())
+
+    output_dir = getattr(stats_conf, "output_dir", "final_experiment_results")
+    experiment_mode = getattr(stats_conf, "experiment_mode", "fine_grained")
+    sample_interval_sec = float(getattr(stats_conf, "sample_interval_sec", 0.5))
+    run_name = getattr(stats_conf, "run_name", "run_0")
 
     return FinalExperimentStats(
         device=device,
