@@ -1,26 +1,28 @@
 from src.config.util.base_config import _Arg, _BaseConfig
 
+config_name = "final_experiment"
 
-class FinalExperimentConfig(_BaseConfig):
+
+class TrainerStatsConfig(_BaseConfig):
     def __init__(self) -> None:
         super().__init__()
         self._arg_output_dir = _Arg(
             type=str,
+            help="The path of the output directory where final experiment files will be saved.",
             default="final_experiment_results",
-            help="Directory where final experiment outputs are written.",
         )
         self._arg_run_name = _Arg(
             type=str,
+            help="Prefix used for output files.",
             default="run_0",
-            help="Prefix for output files.",
         )
         self._arg_experiment_mode = _Arg(
             type=str,
+            help="Experiment mode: baseline_time, e2e_energy, or fine_grained.",
             default="fine_grained",
-            help="One of: baseline_time, e2e_energy, fine_grained.",
         )
         self._arg_sample_interval_sec = _Arg(
             type=float,
+            help="Sampling interval in seconds for fine-grained measurements.",
             default=0.5,
-            help="Sampling interval in seconds for fine-grained timelines.",
         )
