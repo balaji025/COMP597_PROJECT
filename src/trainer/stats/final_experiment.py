@@ -24,7 +24,19 @@ def construct_trainer_stats(conf: config.Config, **kwargs) -> base.TrainerStats:
 
     stats_conf = getattr(getattr(conf, "trainer_stats_configs", object()), "final_experiment", object())
 
-    output_dir = getattr(stats_conf, "output_dir", "final_experiment_results")
+    #output_dir = getattr(stats_conf, "output_dir", "final_experiment_results")
+
+    output_dir = getattr(stats_conf, "output_dir", None)
+
+    if output_dir is None:
+    # fallback: read directly from conf dict-style if needed
+        try:
+            output_dir = conf.trainer_stats_configs.final_experiment.output_dir
+        except Exception:
+            output_dir = "final_experiment_results"
+
+
+
     experiment_mode = getattr(stats_conf, "experiment_mode", "fine_grained")
     sample_interval_sec = float(getattr(stats_conf, "sample_interval_sec", 0.5))
     run_name = getattr(stats_conf, "run_name", "run_0")
