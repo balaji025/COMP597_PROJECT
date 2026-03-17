@@ -37,7 +37,7 @@ class FinalExperimentTrainer(base.Trainer):
         device: torch.device,
         stats: stats.TrainerStats,
         conf: Optional[config.Config] = None,
-        max_duration_sec: float = 300.0,
+        max_duration_sec: float = 300,
         max_steps: Optional[int] = None,
         enable_checkpointing: bool = False,
         checkpoint_frequency: int = 1,

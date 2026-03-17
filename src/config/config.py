@@ -23,3 +23,15 @@ class Config(_BaseConfig):
         self._arg_data = _Arg(type=str, help="Dataset module to use to load data.", default="dataset")
         self.data_configs = data_config.DataConfigs()
 
+        self._arg_max_duration_sec = _Arg(
+            type=float,
+            help="Maximum training duration in seconds for time-limited experiments.",
+            default=300.0,
+        )
+
+        self._arg_max_steps = _Arg(
+            type=int,
+            help="Optional maximum number of training steps.",
+            default=None,
+        )
+
