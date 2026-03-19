@@ -419,6 +419,8 @@ def _build_common_training_objects(
     if batch_size is None:
         batch_size = 2
 
+    print(batch_size)
+
     num_workers = 0
     if hasattr(conf, "data_configs") and hasattr(conf.data_configs, "synth"):
         num_workers = getattr(conf.data_configs.synth, "num_workers", 0)
@@ -434,6 +436,8 @@ def _build_common_training_objects(
         collate_fn=collate_fn,
         num_workers=num_workers,
     )
+
+    print("\n at model.py      \n", batch_size)
 
     optimizer = init_opt_optim(conf, model)
 
