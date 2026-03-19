@@ -41,7 +41,7 @@ def get_conf() -> config.Config:
     conf = config.Config()
     conf.add_arguments(parser)
     
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
     conf.parse_arguments(args)
     return conf
 
