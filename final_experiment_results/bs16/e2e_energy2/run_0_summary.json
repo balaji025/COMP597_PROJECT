@@ -1,0 +1,16 @@
+{
+  "experiment_mode": "e2e_energy",
+  "total_train_ms": 300131.843542,
+  "num_steps": 400,
+  "mean_step_ms": 738.112877065,
+  "std_step_ms": 5.13023999552714,
+  "mean_forward_ms": 250.699770155,
+  "std_forward_ms": 4.478210657985044,
+  "mean_backward_ms": 429.6132818825,
+  "std_backward_ms": 2.3404031740555653,
+  "mean_optimizer_ms": 56.5630897025,
+  "std_optimizer_ms": 0.3657405518884367,
+  "final_loss": 10.836687088012695,
+  "mean_loss": 10.951791214942933,
+  "codecarbon_emissions_kg": 0.00019272196120639445
+}
