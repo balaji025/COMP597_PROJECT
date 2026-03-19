@@ -13,7 +13,7 @@ def add_data_configs(parser: config.ArgumentParser):
     g.add_argument(
         "--data_configs.synth.n",
         type=int,
-        default=1024,
+        default=1000000,  #1024
         help="Number of unique synthetic samples generated and cached.",
     )
     g.add_argument(
