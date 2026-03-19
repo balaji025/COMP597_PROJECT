@@ -16,15 +16,7 @@ class _Arg:
         arg_name = name
         if prefix is not None and prefix != "":
             arg_name = f"{prefix}.{arg_name}"
-        option_strings = [f"--{arg_name}"]
-
-        # Accept the common CLI style that uses hyphens instead of underscores,
-        # e.g. `--batch-size` in addition to `--batch_size`.
-        hyphenated_name = arg_name.replace("_", "-")
-        if hyphenated_name != arg_name:
-            option_strings.append(f"--{hyphenated_name}")
-
-        parser.add_argument(*option_strings, *self.args, **self.kwargs)
+        parser.add_argument(f"--{arg_name}", *self.args, **self.kwargs)
         logger.debug(f"Adding argument '{arg_name}' to parser.")
 
 class _BaseConfig:

@@ -12,7 +12,7 @@ class Config(_BaseConfig):
     def __init__(self) -> None:
         super().__init__()
         self.logging = LoggingConfig()
-        self._arg_batch_size = _Arg(type=int, help="Size of batches", default=4)
+        self._arg_batch_size = _Arg(type=int, help="Size of batches", default=None)
         self._arg_learning_rate = _Arg(type=float, help="The learning rate for training. It is used by the optimizer for all models.", default=1e-6)
         self._arg_model = _Arg(type=str, help="Which model to train.")
         self.model_configs = models_config.ModelConfigs()

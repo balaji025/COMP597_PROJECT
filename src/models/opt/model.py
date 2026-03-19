@@ -176,7 +176,7 @@ def simple_trainer(
     if batch_size is None and hasattr(conf, "trainer_configs") and hasattr(conf.trainer_configs, "simple"):
         batch_size = getattr(conf.trainer_configs.simple, "batch_size", None)
     if batch_size is None:
-        batch_size = 2
+        batch_size = 4
 
     is_hf = _is_hf_text_dataset(dataset)
     collate_fn = hf_collator if (is_hf and hf_collator is not None) else _synth_collate
@@ -417,9 +417,7 @@ def _build_common_training_objects(
     if batch_size is None and hasattr(conf, "data_configs") and hasattr(conf.data_configs, "opt"):
         batch_size = getattr(conf.data_configs.opt, "batch_size", None)
     if batch_size is None:
-        batch_size = 2
-
-    print(batch_size)
+        batch_size = 4
 
     num_workers = 0
     if hasattr(conf, "data_configs") and hasattr(conf.data_configs, "synth"):
@@ -436,8 +434,6 @@ def _build_common_training_objects(
         collate_fn=collate_fn,
         num_workers=num_workers,
     )
-
-    print("\n at model.py      \n", batch_size)
 
     optimizer = init_opt_optim(conf, model)
 

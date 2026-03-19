@@ -44,7 +44,8 @@ def load_data(conf: config.Config) -> data.Dataset:
 
     vocab_size = int(_get("vocab_size", 50272))  # OPT vocab size (common)
     seq_len = int(_get("seq_len", 512))
-    n = int(_get("n", 1024))
+    max_samples = _get("max_samples", None)
+    n = int(max_samples if max_samples is not None else _get("n", 1024))
     repeat = int(_get("repeat", 1))
 
     info = _Info(vocab_size=vocab_size, train_length=seq_len)

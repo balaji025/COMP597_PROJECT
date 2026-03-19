@@ -103,7 +103,11 @@ def simple_trainer(conf : config.Config, model : transformers.GPT2LMHeadModel, d
     Returns:
         Tuple[trainer.Trainer, Optional[Dict]]: The simple trainer and a dictionary with additional options.
     """
-    loader = data.DataLoader(dataset, batch_size=conf.batch_size, collate_fn=data_collator) # DataLoader for batching the dataset
+    batch_size = getattr(conf, "batch_size", None)
+    if batch_size is None:
+        batch_size = 4
+
+    loader = data.DataLoader(dataset, batch_size=batch_size, collate_fn=data_collator) # DataLoader for batching the dataset
     model = model.cuda() # Move the model to GPU
     optimizer = init_gpt2_optim(conf, model) # Initialize the optimizer for GPT-2
     scheduler = transformers.get_scheduler( # Linear learning rate decay scheduler
