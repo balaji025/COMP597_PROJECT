@@ -1,0 +1,16 @@
+{
+  "experiment_mode": "fine_grained",
+  "total_train_ms": 300340.41292,
+  "num_steps": 762,
+  "mean_step_ms": 393.5963125997375,
+  "std_step_ms": 2.9144699079547722,
+  "mean_forward_ms": 125.234839664042,
+  "std_forward_ms": 2.577204723584688,
+  "mean_backward_ms": 210.51151236351706,
+  "std_backward_ms": 0.5936290925995636,
+  "mean_optimizer_ms": 56.694776183727036,
+  "std_optimizer_ms": 0.3035875345181169,
+  "final_loss": 10.828801155090332,
+  "mean_loss": 10.899739227895662,
+  "codecarbon_emissions_kg": null
+}
