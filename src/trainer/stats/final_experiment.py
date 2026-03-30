@@ -341,6 +341,7 @@ class FinalExperimentStats(base.TrainerStats):
         summary = {
             "experiment_mode": self.experiment_mode,
             "total_train_ms": total_train_ms,
+            "num_steps_completed": (self._current_step + 1) if self._current_step >= 0 else 0,
             "num_steps": len(self.step_timer.values_ms) if self.collect_fine_grained_metrics else None,
             "mean_step_ms": _mean(self.step_timer.values_ms) if self.collect_fine_grained_metrics else None,
             "std_step_ms": _std(self.step_timer.values_ms) if self.collect_fine_grained_metrics else None,
