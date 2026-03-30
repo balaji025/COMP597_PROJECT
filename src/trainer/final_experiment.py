@@ -161,7 +161,10 @@ if False:
             progress_bar.close()
             self.stats.log_stats()
 
+import os
+import signal
 import time
+from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 
 import torch
@@ -217,6 +220,7 @@ class FinalExperimentTrainer(base.Trainer):
         self.max_steps = max_steps
         self.experiment_mode = getattr(stats, "experiment_mode", "fine_grained")
         self.collect_fine_grained_metrics = self.experiment_mode == "fine_grained"
+        self._termination_requested = False
 
     def checkpoint_dict(self, i: int) -> Dict[str, Any]:
         super_dict = super().checkpoint_dict(i)
@@ -315,6 +319,41 @@ class FinalExperimentTrainer(base.Trainer):
             return False
         return (time.perf_counter() - start_time) >= self.max_duration_sec
 
+    def _should_stop(self, start_time: float, step_idx: int) -> bool:
+        if self._termination_requested:
+            return True
+        if self._should_stop_for_time(start_time):
+            return True
+        return self.max_steps is not None and step_idx >= self.max_steps
+
+    def _install_sigterm_handler(self):
+        previous_handler = signal.getsignal(signal.SIGTERM)
+
+        def _handle_sigterm(signum, frame):
+            self._termination_requested = True
+
+        signal.signal(signal.SIGTERM, _handle_sigterm)
+        return previous_handler
+
+    def _write_debug_timestamp(self, name: str, extra: Optional[Dict[str, Any]] = None) -> None:
+        output_dir = getattr(self.stats, "output_dir", None)
+        if output_dir is None:
+            return
+
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            path = os.path.join(output_dir, name)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(f"timestamp_iso={datetime.now().isoformat()}\n")
+                f.write(f"timestamp_perf_counter={time.perf_counter()}\n")
+                f.write(f"experiment_mode={self.experiment_mode}\n")
+                f.write(f"max_steps={self.max_steps}\n")
+                if extra is not None:
+                    for key, value in extra.items():
+                        f.write(f"{key}={value}\n")
+        except Exception:
+            pass
+
     def train(self, model_kwargs: Optional[Dict[str, Any]]) -> None:
         if model_kwargs is None:
             model_kwargs = {}
@@ -322,42 +361,71 @@ class FinalExperimentTrainer(base.Trainer):
         start_time = time.perf_counter()
         step_idx = 0
         progress_bar = tqdm.auto.tqdm(unit="step")
+        previous_sigterm_handler = self._install_sigterm_handler()
+        started_stats = False
+        stopped_stats = False
 
-        self.stats.start_train()
+        try:
+            self.stats.start_train()
+            started_stats = True
+            self._write_debug_timestamp("run_started.txt")
 
-        while True:
-            if self._should_stop_for_time(start_time):
-                break
-            if self.max_steps is not None and step_idx >= self.max_steps:
-                break
-
-            for batch in self.loader:
-                if self._should_stop_for_time(start_time):
-                    break
-                if self.max_steps is not None and step_idx >= self.max_steps:
+            while True:
+                if self._should_stop(start_time, step_idx):
                     break
 
-                if self.collect_fine_grained_metrics:
-                    self.stats.start_step()
+                for batch in self.loader:
+                    if self._should_stop(start_time, step_idx):
+                        break
 
-                loss, descr = self.step(step_idx, batch, model_kwargs)
+                    if self.collect_fine_grained_metrics:
+                        self.stats.start_step()
 
-                if self.collect_fine_grained_metrics:
-                    self.stats.stop_step()
+                    loss, descr = self.step(step_idx, batch, model_kwargs)
 
-                if self.enable_checkpointing and self.should_save_checkpoint(step_idx):
-                    self.stats.start_save_checkpoint()
-                    self.save_checkpoint(step_idx)
-                    self.stats.stop_save_checkpoint()
+                    if self.collect_fine_grained_metrics:
+                        self.stats.stop_step()
 
-                self.stats.log_loss(loss)
-                self.stats.log_step()
+                    if self.enable_checkpointing and self.should_save_checkpoint(step_idx):
+                        self.stats.start_save_checkpoint()
+                        self.save_checkpoint(step_idx)
+                        self.stats.stop_save_checkpoint()
 
-                if descr is not None:
-                    progress_bar.write(descr)
-                progress_bar.update(1)
-                step_idx += 1
+                    self.stats.log_loss(loss)
+                    self.stats.log_step()
 
-        self.stats.stop_train()
-        progress_bar.close()
-        self.stats.log_stats()
+                    if descr is not None:
+                        progress_bar.write(descr)
+                    progress_bar.update(1)
+                    step_idx += 1
+        finally:
+            try:
+                self._write_debug_timestamp(
+                    "run_loop_exited.txt",
+                    {
+                        "steps_completed": step_idx,
+                        "termination_requested": self._termination_requested,
+                    },
+                )
+                if started_stats and not stopped_stats:
+                    self.stats.stop_train()
+                    stopped_stats = True
+                    self._write_debug_timestamp(
+                        "run_stop_train_completed.txt",
+                        {
+                            "steps_completed": step_idx,
+                            "termination_requested": self._termination_requested,
+                        },
+                    )
+                if started_stats:
+                    self.stats.log_stats()
+                    self._write_debug_timestamp(
+                        "run_log_stats_completed.txt",
+                        {
+                            "steps_completed": step_idx,
+                            "termination_requested": self._termination_requested,
+                        },
+                    )
+            finally:
+                progress_bar.close()
+                signal.signal(signal.SIGTERM, previous_sigterm_handler)
