@@ -161,8 +161,6 @@ if False:
             progress_bar.close()
             self.stats.log_stats()
 
-import copy
-import os
 import time
 from typing import Any, Dict, Optional, Tuple
 
@@ -170,7 +168,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data
-import transformers
 import tqdm.auto
 
 import src.config as config
@@ -220,8 +217,6 @@ class FinalExperimentTrainer(base.Trainer):
         self.max_steps = max_steps
         self.experiment_mode = getattr(stats, "experiment_mode", "fine_grained")
         self.collect_fine_grained_metrics = self.experiment_mode == "fine_grained"
-        self.last_num_steps_completed: int = 0
-        self.last_total_train_sec: float = 0.0
 
     def checkpoint_dict(self, i: int) -> Dict[str, Any]:
         super_dict = super().checkpoint_dict(i)
@@ -320,7 +315,7 @@ class FinalExperimentTrainer(base.Trainer):
             return False
         return (time.perf_counter() - start_time) >= self.max_duration_sec
 
-    def _train_single_run(self, model_kwargs: Optional[Dict[str, Any]]) -> None:
+    def train(self, model_kwargs: Optional[Dict[str, Any]]) -> None:
         if model_kwargs is None:
             model_kwargs = {}
 
@@ -366,119 +361,3 @@ class FinalExperimentTrainer(base.Trainer):
         self.stats.stop_train()
         progress_bar.close()
         self.stats.log_stats()
-        self.last_num_steps_completed = step_idx
-        self.last_total_train_sec = time.perf_counter() - start_time
-
-    def _resolve_batch_size_label(self) -> str:
-        batch_size = getattr(self.loader, "batch_size", None)
-        if batch_size is None and self.conf is not None:
-            batch_size = getattr(self.conf, "batch_size", None)
-        return f"BS{batch_size}" if batch_size is not None else "BS_unknown"
-
-    def _snapshot_training_state(self) -> Dict[str, Any]:
-        snapshot: Dict[str, Any] = {
-            "model_state_dict": copy.deepcopy(self.model.state_dict()),
-            "optimizer_state_dict": copy.deepcopy(self.optimizer.state_dict()),
-            "scheduler_state_dict": copy.deepcopy(self.lr_scheduler.state_dict()) if self.lr_scheduler is not None else None,
-        }
-        return snapshot
-
-    def _restore_training_state(self, snapshot: Dict[str, Any], num_steps: Optional[int]) -> None:
-        self.model.load_state_dict(snapshot["model_state_dict"])
-        self.optimizer.load_state_dict(snapshot["optimizer_state_dict"])
-
-        if self.lr_scheduler is not None:
-            if num_steps is not None:
-                self.lr_scheduler = transformers.get_scheduler(
-                    "linear",
-                    optimizer=self.optimizer,
-                    num_warmup_steps=0,
-                    num_training_steps=max(int(num_steps), 1),
-                )
-            elif snapshot["scheduler_state_dict"] is not None:
-                self.lr_scheduler.load_state_dict(snapshot["scheduler_state_dict"])
-
-    def _make_stats_for_run(self, mode: str, output_dir: str, run_name: str) -> stats.TrainerStats:
-        if self.conf is None:
-            raise ValueError("Automatic experiment orchestration requires a config object.")
-
-        stats_conf = self.conf.trainer_stats_configs.final_experiment
-        stats_conf.output_dir = output_dir
-        stats_conf.run_name = run_name
-        stats_conf.experiment_mode = mode
-
-        new_stats = stats.init_from_conf(self.conf, device=self.device)
-        if hasattr(new_stats, "device"):
-            new_stats.device = self.device
-        return new_stats
-
-    def _run_calibration(self, model_kwargs: Optional[Dict[str, Any]], bs_dir: str, initial_state: Dict[str, Any]) -> int:
-        calibration_dir = os.path.join(bs_dir, "calibration")
-        os.makedirs(calibration_dir, exist_ok=True)
-
-        self._restore_training_state(initial_state, num_steps=None)
-        self.stats = self._make_stats_for_run("baseline_time", calibration_dir, "calibration")
-
-        original_max_steps = self.max_steps
-        self.max_steps = None
-        self._train_single_run(model_kwargs)
-        calibrated_steps = self.last_num_steps_completed
-        self.max_steps = original_max_steps
-
-        if calibrated_steps <= 0:
-            raise RuntimeError("Calibration run produced zero steps.")
-        return calibrated_steps
-
-    def _get_num_repeats(self) -> int:
-        if self.conf is None:
-            return 3
-        stats_conf = getattr(self.conf.trainer_stats_configs, "final_experiment", object())
-        return int(getattr(stats_conf, "num_repeats", 3))
-
-    def _run_experiment_suite(self, model_kwargs: Optional[Dict[str, Any]]) -> None:
-        if self.conf is None:
-            self._train_single_run(model_kwargs)
-            return
-
-        stats_conf = self.conf.trainer_stats_configs.final_experiment
-        original_output_dir = getattr(stats_conf, "output_dir", "final_experiment_results")
-        original_run_name = getattr(stats_conf, "run_name", "run_0")
-        original_experiment_mode = getattr(stats_conf, "experiment_mode", "fine_grained")
-        original_max_steps = self.max_steps
-        original_conf_max_steps = getattr(self.conf, "max_steps", None)
-
-        bs_dir = os.path.join(original_output_dir, self._resolve_batch_size_label())
-        os.makedirs(bs_dir, exist_ok=True)
-
-        initial_state = self._snapshot_training_state()
-        calibrated_steps = original_max_steps
-        if calibrated_steps is None:
-            calibrated_steps = self._run_calibration(model_kwargs, bs_dir, initial_state)
-
-        repeats = self._get_num_repeats()
-        modes = ["baseline_time", "e2e_energy", "fine_grained"]
-
-        self.max_steps = calibrated_steps
-        self.conf.max_steps = calibrated_steps
-
-        try:
-            for mode in modes:
-                mode_dir = os.path.join(bs_dir, mode)
-                os.makedirs(mode_dir, exist_ok=True)
-
-                for repeat_idx in range(1, repeats + 1):
-                    run_name = f"run_{repeat_idx}"
-                    self._restore_training_state(initial_state, num_steps=calibrated_steps)
-                    self.stats = self._make_stats_for_run(mode, mode_dir, run_name)
-                    self.experiment_mode = mode
-                    self.collect_fine_grained_metrics = mode == "fine_grained"
-                    self._train_single_run(model_kwargs)
-        finally:
-            stats_conf.output_dir = original_output_dir
-            stats_conf.run_name = original_run_name
-            stats_conf.experiment_mode = original_experiment_mode
-            self.max_steps = original_max_steps
-            self.conf.max_steps = original_conf_max_steps
-
-    def train(self, model_kwargs: Optional[Dict[str, Any]]) -> None:
-        self._run_experiment_suite(model_kwargs)
