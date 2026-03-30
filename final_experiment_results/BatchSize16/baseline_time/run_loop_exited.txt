@@ -1,0 +1,6 @@
+timestamp_iso=2026-03-30T18:06:56.711662
+timestamp_perf_counter=10823319.230147803
+experiment_mode=baseline_time
+max_steps=None
+steps_completed=411
+termination_requested=False
