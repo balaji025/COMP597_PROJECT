@@ -1,0 +1,6 @@
+timestamp_iso=2026-03-30T22:01:39.918009
+timestamp_perf_counter=10837402.43648841
+experiment_mode=fine_grained
+max_steps=412
+steps_completed=412
+termination_requested=False

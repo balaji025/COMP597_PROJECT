@@ -1,0 +1,6 @@
+timestamp_iso=2026-03-30T22:34:46.114799
+timestamp_perf_counter=10839388.633286502
+experiment_mode=e2e_energy
+max_steps=772
+steps_completed=772
+termination_requested=False
