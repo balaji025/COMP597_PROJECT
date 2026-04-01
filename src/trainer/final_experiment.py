@@ -221,6 +221,7 @@ class FinalExperimentTrainer(base.Trainer):
         self.experiment_mode = getattr(stats, "experiment_mode", "fine_grained")
         self.collect_fine_grained_metrics = self.experiment_mode == "fine_grained"
         self._termination_requested = False
+        self.grad_accum_microbatch_size = 4
 
     def checkpoint_dict(self, i: int) -> Dict[str, Any]:
         super_dict = super().checkpoint_dict(i)
@@ -245,6 +246,32 @@ class FinalExperimentTrainer(base.Trainer):
     def process_batch(self, i: int, batch: Any) -> Any:
         return self._move_batch_to_device(batch)
 
+    def _batch_size_of(self, batch: Any) -> int:
+        if isinstance(batch, dict):
+            for value in batch.values():
+                if torch.is_tensor(value) and value.ndim > 0:
+                    return int(value.shape[0])
+        raise ValueError("Unable to infer batch size for gradient accumulation.")
+
+    def _split_batch(self, batch: Any, microbatch_size: int) -> list[Any]:
+        if not isinstance(batch, dict):
+            return [batch]
+
+        batch_size = self._batch_size_of(batch)
+        if batch_size <= microbatch_size:
+            return [batch]
+
+        microbatches: list[Any] = []
+        for start in range(0, batch_size, microbatch_size):
+            end = min(start + microbatch_size, batch_size)
+            microbatches.append(
+                {
+                    k: (v[start:end] if torch.is_tensor(v) and v.ndim > 0 else v)
+                    for k, v in batch.items()
+                }
+            )
+        return microbatches
+
     def forward(self, i: int, batch: Any, model_kwargs: Dict[str, Any]) -> torch.Tensor:
         outputs = self.model(**batch, **model_kwargs)
         if hasattr(outputs, "loss"):
@@ -267,10 +294,23 @@ class FinalExperimentTrainer(base.Trainer):
         batch: Any,
         model_kwargs: Dict[str, Any],
     ) -> torch.Tensor:
-        loss = self.forward(i, batch, model_kwargs)
-        self.backward(i, loss)
+        # Previous implementation:
+        # loss = self.forward(i, batch, model_kwargs)
+        # self.backward(i, loss)
+        # self.optimizer_step(i)
+        # return loss
+        microbatches = self._split_batch(batch, self.grad_accum_microbatch_size)
+        accum_scale = 1.0 / len(microbatches)
+        last_loss: Optional[torch.Tensor] = None
+        for microbatch in microbatches:
+            device_batch = self.process_batch(i, microbatch)
+            loss = self.forward(i, device_batch, model_kwargs)
+            last_loss = loss.detach()
+            self.backward(i, loss * accum_scale)
         self.optimizer_step(i)
-        return loss
+        if last_loss is None:
+            raise RuntimeError("No microbatches were produced for the step.")
+        return last_loss
 
     def _run_step_with_phase_metrics(
         self,
@@ -278,19 +318,42 @@ class FinalExperimentTrainer(base.Trainer):
         batch: Any,
         model_kwargs: Dict[str, Any],
     ) -> torch.Tensor:
-        self.stats.start_forward()
-        loss = self.forward(i, batch, model_kwargs)
-        self.stats.stop_forward()
+        # Previous implementation:
+        # self.stats.start_forward()
+        # loss = self.forward(i, batch, model_kwargs)
+        # self.stats.stop_forward()
+        #
+        # self.stats.start_backward()
+        # self.backward(i, loss)
+        # self.stats.stop_backward()
+        #
+        # self.stats.start_optimizer_step()
+        # self.optimizer_step(i)
+        # self.stats.stop_optimizer_step()
+        #
+        # return loss
+        microbatches = self._split_batch(batch, self.grad_accum_microbatch_size)
+        accum_scale = 1.0 / len(microbatches)
+        last_loss: Optional[torch.Tensor] = None
 
-        self.stats.start_backward()
-        self.backward(i, loss)
-        self.stats.stop_backward()
+        for microbatch in microbatches:
+            device_batch = self.process_batch(i, microbatch)
+            self.stats.start_forward()
+            loss = self.forward(i, device_batch, model_kwargs)
+            self.stats.stop_forward()
+
+            self.stats.start_backward()
+            self.backward(i, loss * accum_scale)
+            self.stats.stop_backward()
+            last_loss = loss.detach()
 
         self.stats.start_optimizer_step()
         self.optimizer_step(i)
         self.stats.stop_optimizer_step()
 
-        return loss
+        if last_loss is None:
+            raise RuntimeError("No microbatches were produced for the step.")
+        return last_loss
 
     def step(
         self,
@@ -301,7 +364,6 @@ class FinalExperimentTrainer(base.Trainer):
         if model_kwargs is None:
             model_kwargs = {}
 
-        batch = self.process_batch(i, batch)
         self.optimizer.zero_grad(set_to_none=True)
 
         if hasattr(self.stats, "set_current_step"):
