@@ -11,7 +11,7 @@ class DataConfig(_BaseConfig):
 
         self._arg_n = _Arg(
             type=int,
-            default=64,
+            default=1000000,
             help="Number of unique synthetic samples generated and cached.",
         )
         self._arg_max_samples = _Arg(

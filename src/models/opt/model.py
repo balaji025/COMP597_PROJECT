@@ -69,13 +69,6 @@ def init_opt_optim(conf: config.Config, model: nn.Module) -> optim.Optimizer:
 
 
 def _synth_collate(batch):
-    # Trial implementation:
-    # input_ids = torch.stack([x["input_ids"] for x in batch])
-    # labels = torch.stack([x.get("labels", x["input_ids"]) for x in batch])
-    # attention_mask = torch.stack(
-    #     [x.get("attention_mask", torch.ones_like(x["input_ids"])) for x in batch]
-    # )
-    # return {"input_ids": input_ids, "labels": labels, "attention_mask": attention_mask}
     input_ids = torch.stack([x["input_ids"] for x in batch])
     labels = torch.stack([x.get("labels", x["input_ids"]) for x in batch])
     attention_mask = torch.ones_like(input_ids)
@@ -112,14 +105,8 @@ def pre_init_opt(
             device_map="auto",
         )
     else:
-        # Previous full-precision path:
-        # model = transformers.AutoModelForCausalLM.from_pretrained(
-        #     model_id,
-        #     attn_implementation="sdpa",
-        # )
         model = transformers.AutoModelForCausalLM.from_pretrained(
             model_id,
-            torch_dtype=torch.float16,
             attn_implementation="sdpa",
         )
         if torch.cuda.is_available():
@@ -174,10 +161,6 @@ def _build_common_training_objects(
         batch_size=batch_size,
         collate_fn=collate_fn,
         num_workers=num_workers,
-        # Trial implementation:
-        # shuffle=True,
-        # pin_memory=True,
-        # drop_last=True,
     )
 
     optimizer = init_opt_optim(conf, model)
