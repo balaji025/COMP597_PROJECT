@@ -36,6 +36,7 @@ import src.trainer.stats.base as base
 trainer_stats_name = "final_experiment"
 
 _VALID_EXPERIMENT_MODES = {"baseline_time", "e2e_energy", "fine_grained"}
+_SYNC_EVERY_STEPS = 3
 
 
 def construct_trainer_stats(conf: config.Config, **kwargs) -> base.TrainerStats:
@@ -62,8 +63,11 @@ def construct_trainer_stats(conf: config.Config, **kwargs) -> base.TrainerStats:
     )
 
 
-def _sync_if_cuda(device: torch.device) -> None:
-    if device.type == "cuda":
+def _sync_if_cuda(device: torch.device, should_sync: bool = True) -> None:
+    # Previous logic:
+    # if device.type == "cuda":
+    #     torch.cuda.synchronize(device)
+    if should_sync and device.type == "cuda":
         torch.cuda.synchronize(device)
 
 
@@ -91,14 +95,14 @@ class TimerBucket:
     values_ms: List[float] = field(default_factory=list)
     _start_ns: Optional[int] = None
 
-    def start(self, device: torch.device) -> None:
-        _sync_if_cuda(device)
+    def start(self, device: torch.device, should_sync: bool = True) -> None:
+        _sync_if_cuda(device, should_sync=should_sync)
         self._start_ns = _now_ns()
 
-    def stop(self, device: torch.device) -> float:
+    def stop(self, device: torch.device, should_sync: bool = True) -> float:
         if self._start_ns is None:
             raise RuntimeError("TimerBucket.stop() called before start().")
-        _sync_if_cuda(device)
+        _sync_if_cuda(device, should_sync=should_sync)
         end_ns = _now_ns()
         delta_ms = _ns_to_ms(end_ns - self._start_ns)
         self.values_ms.append(delta_ms)
@@ -300,6 +304,13 @@ class FinalExperimentStats(base.TrainerStats):
         self._timeline_sampler: Optional[TimelineSampler] = None
         self._codecarbon: Optional[CodeCarbonWholeRun] = None
 
+    def _should_sync_current_step(self) -> bool:
+        if self.device.type != "cuda":
+            return False
+        if self._current_step < 0:
+            return True
+        return (self._current_step + 1) % _SYNC_EVERY_STEPS == 0
+
     @property
     def collect_fine_grained_metrics(self) -> bool:
         return self.experiment_mode == "fine_grained"
@@ -315,7 +326,7 @@ class FinalExperimentStats(base.TrainerStats):
         return self._current_step
 
     def start_train(self) -> None:
-        self.train_timer.start(self.device)
+        self.train_timer.start(self.device, should_sync=True)
 
         if self.collect_fine_grained_metrics:
             self._timeline_sampler = TimelineSampler(
@@ -329,7 +340,7 @@ class FinalExperimentStats(base.TrainerStats):
             self._codecarbon.start()
 
     def stop_train(self) -> None:
-        total_train_ms = self.train_timer.stop(self.device)
+        total_train_ms = self.train_timer.stop(self.device, should_sync=True)
 
         if self._timeline_sampler is not None:
             self._timeline_sampler.stop()
@@ -369,12 +380,16 @@ class FinalExperimentStats(base.TrainerStats):
 
     def start_step(self) -> None:
         if self.collect_fine_grained_metrics:
-            self.step_timer.start(self.device)
+            # Previous logic:
+            # self.step_timer.start(self.device)
+            self.step_timer.start(self.device, should_sync=self._should_sync_current_step())
 
     def stop_step(self) -> None:
         if not self.collect_fine_grained_metrics:
             return
-        step_ms = self.step_timer.stop(self.device)
+        # Previous logic:
+        # step_ms = self.step_timer.stop(self.device)
+        step_ms = self.step_timer.stop(self.device, should_sync=self._should_sync_current_step())
         self.step_rows.append(
             {
                 "step": self._current_step,
@@ -387,12 +402,16 @@ class FinalExperimentStats(base.TrainerStats):
 
     def start_forward(self) -> None:
         if self.collect_fine_grained_metrics:
-            self.forward_timer.start(self.device)
+            # Previous logic:
+            # self.forward_timer.start(self.device)
+            self.forward_timer.start(self.device, should_sync=self._should_sync_current_step())
 
     def stop_forward(self) -> None:
         if not self.collect_fine_grained_metrics:
             return
-        val = self.forward_timer.stop(self.device)
+        # Previous logic:
+        # val = self.forward_timer.stop(self.device)
+        val = self.forward_timer.stop(self.device, should_sync=self._should_sync_current_step())
         self._current_step_forward_ms = val
         self.phase_rows.append({"step": self._current_step, "phase": "forward", "time_ms": val})
 
@@ -402,33 +421,41 @@ class FinalExperimentStats(base.TrainerStats):
 
     def start_backward(self) -> None:
         if self.collect_fine_grained_metrics:
-            self.backward_timer.start(self.device)
+            # Previous logic:
+            # self.backward_timer.start(self.device)
+            self.backward_timer.start(self.device, should_sync=self._should_sync_current_step())
 
     def stop_backward(self) -> None:
         if not self.collect_fine_grained_metrics:
             return
-        val = self.backward_timer.stop(self.device)
+        # Previous logic:
+        # val = self.backward_timer.stop(self.device)
+        val = self.backward_timer.stop(self.device, should_sync=self._should_sync_current_step())
         self._current_step_backward_ms = val
         self.phase_rows.append({"step": self._current_step, "phase": "backward", "time_ms": val})
 
     def start_optimizer_step(self) -> None:
         if self.collect_fine_grained_metrics:
-            self.optimizer_timer.start(self.device)
+            # Previous logic:
+            # self.optimizer_timer.start(self.device)
+            self.optimizer_timer.start(self.device, should_sync=self._should_sync_current_step())
 
     def stop_optimizer_step(self) -> None:
         if not self.collect_fine_grained_metrics:
             return
-        val = self.optimizer_timer.stop(self.device)
+        # Previous logic:
+        # val = self.optimizer_timer.stop(self.device)
+        val = self.optimizer_timer.stop(self.device, should_sync=self._should_sync_current_step())
         self._current_step_optimizer_ms = val
         self.phase_rows.append({"step": self._current_step, "phase": "optimizer", "time_ms": val})
 
     def start_save_checkpoint(self) -> None:
         if self.collect_fine_grained_metrics:
-            self.checkpoint_timer.start(self.device)
+            self.checkpoint_timer.start(self.device, should_sync=True)
 
     def stop_save_checkpoint(self) -> None:
         if self.collect_fine_grained_metrics:
-            self.checkpoint_timer.stop(self.device)
+            self.checkpoint_timer.stop(self.device, should_sync=True)
 
     def log_step(self) -> None:
         pass
