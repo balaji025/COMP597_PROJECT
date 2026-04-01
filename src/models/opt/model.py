@@ -112,8 +112,14 @@ def pre_init_opt(
             device_map="auto",
         )
     else:
+        # Previous full-precision path:
+        # model = transformers.AutoModelForCausalLM.from_pretrained(
+        #     model_id,
+        #     attn_implementation="sdpa",
+        # )
         model = transformers.AutoModelForCausalLM.from_pretrained(
             model_id,
+            torch_dtype=torch.float16,
             attn_implementation="sdpa",
         )
         if torch.cuda.is_available():
