@@ -215,8 +215,11 @@ class TimelineSampler:
         self._rows: List[Dict[str, Any]] = []
         self._nvml = NvmlHelper()
         self._t0: Optional[float] = None
+        self._process = psutil.Process()
 
-        psutil.cpu_percent(interval=None)
+        # Previous system-wide CPU measurement:
+        # psutil.cpu_percent(interval=None)
+        self._process.cpu_percent(interval=None)
 
     def start(self) -> None:
         self._t0 = time.perf_counter()
@@ -240,7 +243,9 @@ class TimelineSampler:
                 "timestamp_perf_counter_sec": now,
                 "elapsed_sec": elapsed,
                 "step": self.get_current_step_fn(),
-                "cpu_util_percent": psutil.cpu_percent(interval=None),
+                # Previous system-wide CPU measurement:
+                # "cpu_util_percent": psutil.cpu_percent(interval=None),
+                "cpu_util_percent": self._process.cpu_percent(interval=None),
             }
             row.update(self._nvml.sample())
             self._rows.append(row)
