@@ -10,16 +10,28 @@ def register_generator(fn):
 
 class SyntheticData:
     def __init__(self, generators, n, repeat):
+        # Previous cached-data implementation kept for easy rollback:
+        # self.n = n
+        # self.repeat = repeat
+        # self.generators = generators
+        # self.data = [self.gen() for _ in range(n)]
         self.n = n
         self.repeat = repeat
         self.generators = generators
-        self.data = [self.gen() for _ in range(n)]
 
     def gen(self):
         return {name: gen() for name, gen in self.generators.items()}
 
     def __getitem__(self, i):
-        return self.data[i % self.n]
+        # Friend-method trial: generate a fresh sample on every access.
+        sample = self.gen()
+        if "input_ids" in sample:
+            sample["labels"] = sample["input_ids"].clone()
+            sample.setdefault(
+                "attention_mask",
+                torch.ones_like(sample["input_ids"], dtype=torch.long),
+            )
+        return sample
 
     def __len__(self):
         return self.n * self.repeat
@@ -34,9 +46,13 @@ def vocabgen(info):
 
 @register_generator
 def gen_AutoModelForCausalLM(info):
+    # Previous implementation:
+    # return {
+    #     "input_ids": vocabgen(info),
+    #     "labels": vocabgen(info),
+    # }
     return {
         "input_ids": vocabgen(info),
-        "labels": vocabgen(info),
     }
 
 
