@@ -1,0 +1,17 @@
+{
+  "experiment_mode": "baseline_time",
+  "total_train_ms": 300408.146885,
+  "num_steps_completed": 737,
+  "num_steps": null,
+  "mean_step_ms": null,
+  "std_step_ms": null,
+  "mean_forward_ms": null,
+  "std_forward_ms": null,
+  "mean_backward_ms": null,
+  "std_backward_ms": null,
+  "mean_optimizer_ms": null,
+  "std_optimizer_ms": null,
+  "final_loss": null,
+  "mean_loss": null,
+  "codecarbon_emissions_kg": null
+}
