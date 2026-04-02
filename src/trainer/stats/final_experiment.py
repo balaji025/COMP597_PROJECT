@@ -211,8 +211,10 @@ class TimelineSampler:
         self._rows: List[Dict[str, Any]] = []
         self._nvml = NvmlHelper()
         self._t0: Optional[float] = None
+        self._process = psutil.Process()
 
         psutil.cpu_percent(interval=None)
+        self._process.cpu_percent(interval=None)
 
     def start(self) -> None:
         self._t0 = time.perf_counter()
@@ -237,6 +239,7 @@ class TimelineSampler:
                 "elapsed_sec": elapsed,
                 "step": self.get_current_step_fn(),
                 "cpu_util_percent": psutil.cpu_percent(interval=None),
+                "process_cpu_util_percent": self._process.cpu_percent(interval=None),
             }
             row.update(self._nvml.sample())
             self._rows.append(row)
@@ -250,6 +253,7 @@ class TimelineSampler:
             "elapsed_sec",
             "step",
             "cpu_util_percent",
+            "process_cpu_util_percent",
             "gpu_util_percent",
             "gpu_mem_used_mb",
             "gpu_power_w",
@@ -291,11 +295,14 @@ class FinalExperimentStats(base.TrainerStats):
         self.losses: List[float] = []
         self.phase_rows: List[Dict[str, Any]] = []
         self.step_rows: List[Dict[str, Any]] = []
+        self.logical_forward_values_ms: List[float] = []
+        self.logical_backward_values_ms: List[float] = []
+        self.logical_optimizer_values_ms: List[float] = []
 
         self._current_step: int = -1
-        self._current_step_forward_ms: Optional[float] = None
-        self._current_step_backward_ms: Optional[float] = None
-        self._current_step_optimizer_ms: Optional[float] = None
+        self._current_step_forward_ms: Optional[float] = 0.0
+        self._current_step_backward_ms: Optional[float] = 0.0
+        self._current_step_optimizer_ms: Optional[float] = 0.0
 
         self._timeline_sampler: Optional[TimelineSampler] = None
         self._codecarbon: Optional[CodeCarbonWholeRun] = None
@@ -345,12 +352,12 @@ class FinalExperimentStats(base.TrainerStats):
             "num_steps": len(self.step_timer.values_ms) if self.collect_fine_grained_metrics else None,
             "mean_step_ms": _mean(self.step_timer.values_ms) if self.collect_fine_grained_metrics else None,
             "std_step_ms": _std(self.step_timer.values_ms) if self.collect_fine_grained_metrics else None,
-            "mean_forward_ms": _mean(self.forward_timer.values_ms) if self.collect_fine_grained_metrics else None,
-            "std_forward_ms": _std(self.forward_timer.values_ms) if self.collect_fine_grained_metrics else None,
-            "mean_backward_ms": _mean(self.backward_timer.values_ms) if self.collect_fine_grained_metrics else None,
-            "std_backward_ms": _std(self.backward_timer.values_ms) if self.collect_fine_grained_metrics else None,
-            "mean_optimizer_ms": _mean(self.optimizer_timer.values_ms) if self.collect_fine_grained_metrics else None,
-            "std_optimizer_ms": _std(self.optimizer_timer.values_ms) if self.collect_fine_grained_metrics else None,
+            "mean_forward_ms": _mean(self.logical_forward_values_ms) if self.collect_fine_grained_metrics else None,
+            "std_forward_ms": _std(self.logical_forward_values_ms) if self.collect_fine_grained_metrics else None,
+            "mean_backward_ms": _mean(self.logical_backward_values_ms) if self.collect_fine_grained_metrics else None,
+            "std_backward_ms": _std(self.logical_backward_values_ms) if self.collect_fine_grained_metrics else None,
+            "mean_optimizer_ms": _mean(self.logical_optimizer_values_ms) if self.collect_fine_grained_metrics else None,
+            "std_optimizer_ms": _std(self.logical_optimizer_values_ms) if self.collect_fine_grained_metrics else None,
             "final_loss": self.losses[-1] if self.losses else None,
             "mean_loss": _mean(self.losses) if self.losses else None,
             "codecarbon_emissions_kg": emissions_kg,
@@ -369,12 +376,21 @@ class FinalExperimentStats(base.TrainerStats):
 
     def start_step(self) -> None:
         if self.collect_fine_grained_metrics:
+            self._current_step_forward_ms = 0.0
+            self._current_step_backward_ms = 0.0
+            self._current_step_optimizer_ms = 0.0
             self.step_timer.start(self.device)
 
     def stop_step(self) -> None:
         if not self.collect_fine_grained_metrics:
             return
         step_ms = self.step_timer.stop(self.device)
+        self.logical_forward_values_ms.append(float(self._current_step_forward_ms or 0.0))
+        self.logical_backward_values_ms.append(float(self._current_step_backward_ms or 0.0))
+        self.logical_optimizer_values_ms.append(float(self._current_step_optimizer_ms or 0.0))
+        self.phase_rows.append({"step": self._current_step, "phase": "forward", "time_ms": self._current_step_forward_ms or 0.0})
+        self.phase_rows.append({"step": self._current_step, "phase": "backward", "time_ms": self._current_step_backward_ms or 0.0})
+        self.phase_rows.append({"step": self._current_step, "phase": "optimizer", "time_ms": self._current_step_optimizer_ms or 0.0})
         self.step_rows.append(
             {
                 "step": self._current_step,
@@ -393,8 +409,7 @@ class FinalExperimentStats(base.TrainerStats):
         if not self.collect_fine_grained_metrics:
             return
         val = self.forward_timer.stop(self.device)
-        self._current_step_forward_ms = val
-        self.phase_rows.append({"step": self._current_step, "phase": "forward", "time_ms": val})
+        self._current_step_forward_ms = float(self._current_step_forward_ms or 0.0) + val
 
     def log_loss(self, loss: torch.Tensor) -> None:
         if self.collect_fine_grained_metrics:
@@ -408,8 +423,7 @@ class FinalExperimentStats(base.TrainerStats):
         if not self.collect_fine_grained_metrics:
             return
         val = self.backward_timer.stop(self.device)
-        self._current_step_backward_ms = val
-        self.phase_rows.append({"step": self._current_step, "phase": "backward", "time_ms": val})
+        self._current_step_backward_ms = float(self._current_step_backward_ms or 0.0) + val
 
     def start_optimizer_step(self) -> None:
         if self.collect_fine_grained_metrics:
@@ -419,8 +433,7 @@ class FinalExperimentStats(base.TrainerStats):
         if not self.collect_fine_grained_metrics:
             return
         val = self.optimizer_timer.stop(self.device)
-        self._current_step_optimizer_ms = val
-        self.phase_rows.append({"step": self._current_step, "phase": "optimizer", "time_ms": val})
+        self._current_step_optimizer_ms = float(self._current_step_optimizer_ms or 0.0) + val
 
     def start_save_checkpoint(self) -> None:
         if self.collect_fine_grained_metrics:

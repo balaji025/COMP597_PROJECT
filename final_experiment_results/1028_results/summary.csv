@@ -1,4 +1,0 @@
-mode,label,total_train_sec,steps_completed,steps_per_second,time_overhead_pct_vs_baseline,final_loss,mean_step_ms
-baseline_time,Baseline timing,300.408146885,737,2.4533289381200865,0.0,,
-e2e_energy,E2E energy,305.231739359,737,2.4145588579606176,1.6056796475118686,,
-fine_grained,Fine-grained,303.321151477,737,2.4297679090667854,0.9696822879823954,10.802547454833984,283.0010564423338
