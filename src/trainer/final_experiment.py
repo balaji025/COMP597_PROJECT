@@ -219,9 +219,7 @@ class FinalExperimentTrainer(base.Trainer):
         self.max_duration_sec = float(max_duration_sec)
         self.max_steps = max_steps
         self.experiment_mode = getattr(stats, "experiment_mode", "fine_grained")
-        self.collect_fine_grained_metrics = self.experiment_mode == "fine_grained"
         self._termination_requested = False
-        self.grad_accum_microbatch_size = 4
 
     def checkpoint_dict(self, i: int) -> Dict[str, Any]:
         super_dict = super().checkpoint_dict(i)
@@ -229,6 +227,11 @@ class FinalExperimentTrainer(base.Trainer):
         if self.lr_scheduler is not None:
             super_dict["lr_scheduler_state_dict"] = self.lr_scheduler.state_dict()
         return super_dict
+
+    def checkpoint_path(self, i: int) -> str:
+        output_dir = getattr(self.stats, "output_dir", ".")
+        os.makedirs(output_dir, exist_ok=True)
+        return os.path.join(output_dir, f"checkpoint_step_{i + 1}.tar")
 
     def _move_batch_to_device(self, batch: Any) -> Any:
         if isinstance(batch, dict):
@@ -246,32 +249,6 @@ class FinalExperimentTrainer(base.Trainer):
     def process_batch(self, i: int, batch: Any) -> Any:
         return self._move_batch_to_device(batch)
 
-    def _batch_size_of(self, batch: Any) -> int:
-        if isinstance(batch, dict):
-            for value in batch.values():
-                if torch.is_tensor(value) and value.ndim > 0:
-                    return int(value.shape[0])
-        raise ValueError("Unable to infer batch size for gradient accumulation.")
-
-    def _split_batch(self, batch: Any, microbatch_size: int) -> list[Any]:
-        if not isinstance(batch, dict):
-            return [batch]
-
-        batch_size = self._batch_size_of(batch)
-        if batch_size <= microbatch_size:
-            return [batch]
-
-        microbatches: list[Any] = []
-        for start in range(0, batch_size, microbatch_size):
-            end = min(start + microbatch_size, batch_size)
-            microbatches.append(
-                {
-                    k: (v[start:end] if torch.is_tensor(v) and v.ndim > 0 else v)
-                    for k, v in batch.items()
-                }
-            )
-        return microbatches
-
     def forward(self, i: int, batch: Any, model_kwargs: Dict[str, Any]) -> torch.Tensor:
         outputs = self.model(**batch, **model_kwargs)
         if hasattr(outputs, "loss"):
@@ -288,73 +265,6 @@ class FinalExperimentTrainer(base.Trainer):
         if self.lr_scheduler is not None:
             self.lr_scheduler.step()
 
-    def _run_step_without_phase_metrics(
-        self,
-        i: int,
-        batch: Any,
-        model_kwargs: Dict[str, Any],
-    ) -> torch.Tensor:
-        # Previous implementation:
-        # loss = self.forward(i, batch, model_kwargs)
-        # self.backward(i, loss)
-        # self.optimizer_step(i)
-        # return loss
-        microbatches = self._split_batch(batch, self.grad_accum_microbatch_size)
-        accum_scale = 1.0 / len(microbatches)
-        last_loss: Optional[torch.Tensor] = None
-        for microbatch in microbatches:
-            device_batch = self.process_batch(i, microbatch)
-            loss = self.forward(i, device_batch, model_kwargs)
-            last_loss = loss.detach()
-            self.backward(i, loss * accum_scale)
-        self.optimizer_step(i)
-        if last_loss is None:
-            raise RuntimeError("No microbatches were produced for the step.")
-        return last_loss
-
-    def _run_step_with_phase_metrics(
-        self,
-        i: int,
-        batch: Any,
-        model_kwargs: Dict[str, Any],
-    ) -> torch.Tensor:
-        # Previous implementation:
-        # self.stats.start_forward()
-        # loss = self.forward(i, batch, model_kwargs)
-        # self.stats.stop_forward()
-        #
-        # self.stats.start_backward()
-        # self.backward(i, loss)
-        # self.stats.stop_backward()
-        #
-        # self.stats.start_optimizer_step()
-        # self.optimizer_step(i)
-        # self.stats.stop_optimizer_step()
-        #
-        # return loss
-        microbatches = self._split_batch(batch, self.grad_accum_microbatch_size)
-        accum_scale = 1.0 / len(microbatches)
-        last_loss: Optional[torch.Tensor] = None
-
-        for microbatch in microbatches:
-            device_batch = self.process_batch(i, microbatch)
-            self.stats.start_forward()
-            loss = self.forward(i, device_batch, model_kwargs)
-            self.stats.stop_forward()
-
-            self.stats.start_backward()
-            self.backward(i, loss * accum_scale)
-            self.stats.stop_backward()
-            last_loss = loss.detach()
-
-        self.stats.start_optimizer_step()
-        self.optimizer_step(i)
-        self.stats.stop_optimizer_step()
-
-        if last_loss is None:
-            raise RuntimeError("No microbatches were produced for the step.")
-        return last_loss
-
     def step(
         self,
         i: int,
@@ -364,15 +274,23 @@ class FinalExperimentTrainer(base.Trainer):
         if model_kwargs is None:
             model_kwargs = {}
 
-        self.optimizer.zero_grad(set_to_none=True)
+        batch = self.process_batch(i, batch)
+        self.optimizer.zero_grad()
 
         if hasattr(self.stats, "set_current_step"):
             self.stats.set_current_step(i)
 
-        if self.collect_fine_grained_metrics:
-            loss = self._run_step_with_phase_metrics(i, batch, model_kwargs)
-        else:
-            loss = self._run_step_without_phase_metrics(i, batch, model_kwargs)
+        self.stats.start_forward()
+        loss = self.forward(i, batch, model_kwargs)
+        self.stats.stop_forward()
+
+        self.stats.start_backward()
+        self.backward(i, loss)
+        self.stats.stop_backward()
+
+        self.stats.start_optimizer_step()
+        self.optimizer_step(i)
+        self.stats.stop_optimizer_step()
 
         return loss, None
 
@@ -440,13 +358,9 @@ class FinalExperimentTrainer(base.Trainer):
                     if self._should_stop(start_time, step_idx):
                         break
 
-                    if self.collect_fine_grained_metrics:
-                        self.stats.start_step()
-
+                    self.stats.start_step()
                     loss, descr = self.step(step_idx, batch, model_kwargs)
-
-                    if self.collect_fine_grained_metrics:
-                        self.stats.stop_step()
+                    self.stats.stop_step()
 
                     if self.enable_checkpointing and self.should_save_checkpoint(step_idx):
                         self.stats.start_save_checkpoint()

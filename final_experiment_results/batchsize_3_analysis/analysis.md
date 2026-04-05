@@ -50,4 +50,10 @@ Fine-grained source folders used:
 - `phase_breakdown.png`
 - `resource_trends.png`
 - `process_cpu_trend.png`
+
+- `energy_and_emissions.png`
 - `timeline_batchsize_4.png`, `timeline_batchsize_8.png`, `timeline_batchsize_16.png`
+
+## Energy View
+
+- `energy_and_emissions.png` now reports GPU-only energy from the CodeCarbon `gpu_energy` field for the E2E energy runs across batch sizes.

@@ -222,6 +222,9 @@ def final_experiment_trainer(
 
     max_duration_sec = getattr(conf, "max_duration_sec", 300.0)
     max_steps = getattr(conf, "max_steps", None)
+    trainer_conf = getattr(getattr(conf, "trainer_configs", object()), "final_experiment", object())
+    enable_checkpointing = bool(getattr(trainer_conf, "enable_checkpointing", 0))
+    checkpoint_frequency = int(getattr(trainer_conf, "checkpoint_frequency", 100))
 
     return trainer.FinalExperimentTrainer(
         loader=loader,
@@ -233,6 +236,8 @@ def final_experiment_trainer(
         conf=conf,
         max_duration_sec=max_duration_sec,
         max_steps=max_steps,
+        enable_checkpointing=enable_checkpointing,
+        checkpoint_frequency=checkpoint_frequency,
     ), {"model_id": getattr(conf.model_configs.opt, "hf_model_name", "facebook/opt-350m")}
 
 

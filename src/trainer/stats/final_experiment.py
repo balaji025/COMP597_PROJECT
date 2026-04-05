@@ -298,6 +298,7 @@ class FinalExperimentStats(base.TrainerStats):
         self.logical_forward_values_ms: List[float] = []
         self.logical_backward_values_ms: List[float] = []
         self.logical_optimizer_values_ms: List[float] = []
+        self.logical_checkpoint_values_ms: List[float] = []
 
         self._current_step: int = -1
         self._current_step_forward_ms: Optional[float] = 0.0
@@ -358,6 +359,8 @@ class FinalExperimentStats(base.TrainerStats):
             "std_backward_ms": _std(self.logical_backward_values_ms) if self.collect_fine_grained_metrics else None,
             "mean_optimizer_ms": _mean(self.logical_optimizer_values_ms) if self.collect_fine_grained_metrics else None,
             "std_optimizer_ms": _std(self.logical_optimizer_values_ms) if self.collect_fine_grained_metrics else None,
+            "mean_checkpoint_ms": _mean(self.logical_checkpoint_values_ms) if self.logical_checkpoint_values_ms else None,
+            "std_checkpoint_ms": _std(self.logical_checkpoint_values_ms) if self.logical_checkpoint_values_ms else None,
             "final_loss": self.losses[-1] if self.losses else None,
             "mean_loss": _mean(self.losses) if self.losses else None,
             "codecarbon_emissions_kg": emissions_kg,
@@ -441,7 +444,9 @@ class FinalExperimentStats(base.TrainerStats):
 
     def stop_save_checkpoint(self) -> None:
         if self.collect_fine_grained_metrics:
-            self.checkpoint_timer.stop(self.device)
+            val = self.checkpoint_timer.stop(self.device)
+            self.logical_checkpoint_values_ms.append(val)
+            self.phase_rows.append({"step": self._current_step, "phase": "checkpoint", "time_ms": val})
 
     def log_step(self) -> None:
         pass
