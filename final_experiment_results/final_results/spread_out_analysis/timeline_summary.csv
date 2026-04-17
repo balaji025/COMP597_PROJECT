@@ -1,0 +1,4 @@
+batch_size,avg_gpu_util_percent,avg_cpu_util_percent,avg_process_cpu_util_percent,avg_gpu_mem_used_mb,avg_gpu_power_w,timeline_path,has_process_cpu_column
+4,98.29364150201926,1.5191821870491298,100.95243755665236,8757.25,211.94622012997604,final_experiment_results/final_results/spread_out_analysis/timeline_batchsize_4.png,True
+8,98.94993693192357,1.0661259506585052,100.89095454408603,11715.93854201447,225.32982346039697,final_experiment_results/final_results/spread_out_analysis/timeline_batchsize_8.png,True
+16,99.42391845207275,1.017456649360136,100.80069118399271,19341.33387776052,231.69454622671572,final_experiment_results/final_results/spread_out_analysis/timeline_batchsize_16.png,True
